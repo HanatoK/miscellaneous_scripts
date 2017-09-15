@@ -9,8 +9,12 @@ import math
 parser = argparse.ArgumentParser()
 parser.add_argument("pmf", help = "specify the PMF file")
 parser.add_argument("-o", "--output", help = "specify the PNG output image file")
+parser.add_argument("-c", "--colvars", action = "store_true", help = "use Colvars units")
 args = parser.parse_args()
 pmf = args.pmf
+colvars = False
+if args.colvars:
+    colvars = True
 if args.output is None:
     png = pmf + ".png"
 else:
@@ -18,9 +22,10 @@ else:
 
 def plotfes(pmffilename, pngfilename):
     x, y, z = np.genfromtxt(pmffilename, unpack=True)
-    x = x / math.pi * 180
-    y = y / math.pi * 180
-    z = z / 4.184
+    if colvars is False:
+        x = x / math.pi * 180
+        y = y / math.pi * 180
+        z = z / 4.184
     binx = len(set(x))
     biny = len(set(y))
     xi = x.reshape(binx, biny)
