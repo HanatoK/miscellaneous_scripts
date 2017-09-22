@@ -23,7 +23,10 @@ y = y + abs(min(y))
 if args.colvars == False:
     y = y / 4.184
 plt.plot(x, y)
-plt.xlabel("Distance(nm)")
+if args.colvars == True:
+    plt.xlabel("Distance(Å)")
+else:
+    plt.xlabel("Distance(nm)")
 plt.ylabel("Free energy(kCal/mol)")
 ax = plt.gca()
 ax.tick_params(direction="in")
