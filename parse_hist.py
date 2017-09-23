@@ -20,7 +20,7 @@ for line in histfile:
         break
 histfile.close()
 extarg = "--additional-suffix=" + extname
-digiarg = "--numeric-suffixes=1"
+digiarg = "--numeric-suffixes=0"
 # 如果hist文件分割出来多于9999个，请酌情修改下方的后缀长度
 suffixlenarg = "--suffix-length=4"
 call(["split", "-l", str(count), args.hist, newbasename, extarg, digiarg, suffixlenarg])
