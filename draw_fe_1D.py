@@ -27,7 +27,7 @@ if args.colvars == True:
     plt.xlabel("Distance(Å)")
 else:
     plt.xlabel("Distance(nm)")
-plt.ylabel("Free energy(kCal/mol)")
+plt.ylabel("Free energy(kcal/mol)")
 ax = plt.gca()
 ax.tick_params(direction="in")
 plt.savefig(png, dpi=400, transparent=True)

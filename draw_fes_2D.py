@@ -37,7 +37,7 @@ def plotfes(pmffilename, pngfilename):
     plt.ylabel(r'$\psi$(degree)')
     plt.title('Free Energy Surface')
     clb = plt.colorbar()
-    clb.ax.set_title("kCal/mol")
+    clb.ax.set_title("kcal/mol")
     plt.savefig(pngfilename, dpi=400, transparent=True)
     return
 
