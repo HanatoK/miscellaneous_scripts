@@ -5,7 +5,7 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('data', nargs = '+', help = 'specify the data file(s)')
-parser.add_argument('-o', '--output', help = 'PNG output file')
+parser.add_argument('-o', '--output', help = 'output file')
 parser.add_argument('-n', '--column', help = 'column you want to calculate')
 args = parser.parse_args()
 
