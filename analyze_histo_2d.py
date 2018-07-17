@@ -24,16 +24,20 @@ def calcpmf(probability):
     '''copy'''
     tmp = copy.deepcopy(probability)
     '''allow modify np array'''
+    total = np.sum(probability)
     for p_i in np.nditer(tmp, op_flags=['readwrite']):
         if p_i > 0:
-            p_i[...] = - kb * t * np.log(p_i)
+            p_i[...] = - kb * t * np.log(p_i / total)
     Amax = max(tmp)
     print("maximum PMF:", Amax)
     for p_i in np.nditer(probability, op_flags=['readwrite']):
         if p_i > 0:
-            p_i[...] = - kb * t * np.log(p_i)
+            p_i[...] = - kb * t * np.log(p_i / total)
         else:
             p_i[...] = Amax
+    Amin = min(probability)
+    for p_i in np.nditer(probability, op_flags=['readwrite']):
+        p_i[...] -= Amin
     return probability
 
 x, y, z = np.genfromtxt(histo, unpack=True)
