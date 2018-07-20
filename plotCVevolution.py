@@ -41,7 +41,7 @@ def plotCV(start, end, cv, filename):
 def subplotCV(cv, filename):
     plotColumns = 3
     nplots = int(cvlength / freq)
-    plotRows = int(math.ceil(nplots / plotColumns))
+    plotRows = int(math.ceil(nplots + 1 / plotColumns))
     gs = gridspec.GridSpec(plotRows, plotColumns)
     fig = plt.figure()
     for i in range(1, nplots + 1):
