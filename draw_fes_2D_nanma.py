@@ -1,26 +1,30 @@
-#!/usr/bin/python3
-import argparse
+#!/usr/bin/env python3
 import matplotlib
-matplotlib.use('Agg')
+import os
+import argparse
+matplotlib.use("pgf")
 import matplotlib.pyplot as plt
 plt.rcParams.update({
-    #"pgf.texsystem": "lualatex",
-    "font.family": "Arimo",  # use serif/main font for text elements
-    #"text.usetex": True,     # use inline math for ticks
+    "pgf.texsystem": "lualatex",
+    "font.family": "serif",  # use serif/main font for text elements
+    "text.usetex": True,     # use inline math for ticks
     "pgf.rcfonts": False,    # don't setup fonts from rc parameters
-    "axes.labelsize": 16,
+    "axes.labelsize": 20,
     "axes.linewidth": 2.0,
-    "font.size": 12,
-    #"pgf.preamble": [
-         #"\\usepackage{units}",          # load additional packages
-         #"\\usepackage{metalogo}",
-         #"\\usepackage{unicode-math}",   # unicode math setup
-         #r"\setmathfont{MathJax_Math}",
-         #r"\setmainfont{FreeSans}",  # serif font via preamble
-         #]
+    "font.size": 16,
+    "pgf.preamble": [
+         "\\usepackage{units}",          # load additional packages
+         "\\usepackage{metalogo}",
+         "\\usepackage{unicode-math}",   # unicode math setup
+         r"\setmathfont{MathJax_Math}",
+         r"\setmainfont{Arimo}",  # serif font via preamble
+         ]
 })
 import numpy as np
-import math
+from matplotlib.figure import figaspect
+from scipy.interpolate import interp1d
+import matplotlib.ticker as ticker
+from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 
 parser = argparse.ArgumentParser()
 parser.add_argument("pmf", help = "specify the PMF file")
@@ -59,19 +63,27 @@ def plotfes(pmffilename, pngfilename):
     ax = plt.gca()
     ax.set_xlim(-180, 180)
     ax.set_ylim(-180, 180)
+    ax.tick_params(direction = 'in', which = 'major', length=6.0, width = 1.0, top = True, right = True)
+    ax.tick_params(direction = 'in', which = 'minor', length=3.0, width = 1.0, top = True, right = True)
+    ax.xaxis.get_major_formatter()._usetex = False
+    ax.yaxis.get_major_formatter()._usetex = False
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
-    #ax.xaxis.set_minor_locator(plt.MaxNLocator(50))
     ax.yaxis.set_major_locator(plt.MaxNLocator(10))
-    #ax.yaxis.set_minor_locator(plt.MaxNLocator(50))
+    ax.xaxis.set_minor_locator(AutoMinorLocator())
+    ax.yaxis.set_minor_locator(AutoMinorLocator())
     plt.xlabel(r'$\phi$ (degree)')
     plt.ylabel(r'$\psi$ (degree)')
-    #plt.title('Free Energy Surface')
-    clb = plt.colorbar(cf)
+    plt.title('Free Energy Surface')
+    clb = plt.colorbar()
     clb.ax.set_title("kcal/mol")
-    ticklabs = clb.ax.get_yticklabels()
-    clb.ax.set_yticklabels(ticklabs,ha='right')
-    clb.ax.yaxis.set_tick_params(pad=25)
-    plt.tight_layout()
+    clb.ax.xaxis.get_major_formatter()._usetex = False
+    clb.ax.yaxis.get_major_formatter()._usetex = False
+    clbticks = [i.get_text() for i in clb.ax.get_yticklabels()]
+    clbticksstr = [i.strip('$') for i in clbticks]
+    #print(clbticks)
+    #print(clbticksstr)
+    clb.ax.set_yticklabels(clbticksstr, fontsize = 14)
+    plt.tight_layout(pad = 0.2)
     plt.savefig(pngfilename, dpi=400, transparent=False)
     return
 
