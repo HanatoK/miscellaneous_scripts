@@ -26,15 +26,17 @@ from scipy.interpolate import interp1d
 import matplotlib.ticker as ticker
 from matplotlib.ticker import AutoMinorLocator, MultipleLocator
 
+# parsing arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("pmf", help = "specify the PMF file")
-parser.add_argument("-o", "--output", help = "specify the PNG output image file")
-parser.add_argument("-c", "--colvars", action = "store_true", help = "use Colvars units")
+parser.add_argument('pmf', help = 'PMF file')
+parser.add_argument('-o', '--output', help = 'PNG output image file')
+parser.add_argument('--zmax', type = float, help = 'maximum z value')
+parser.add_argument('--level', default = 25, type = int, help = 'contour levels')
+parser.add_argument('--xtitle', help = 'title of X axis')
+parser.add_argument('--ytitle', help = 'title of Y axis')
 args = parser.parse_args()
+
 pmf = args.pmf
-colvars = False
-if args.colvars:
-    colvars = True
 if args.output is None:
     png = pmf + ".png"
 else:
@@ -320,7 +322,6 @@ def RGBToPyCmap(rgbdata):
 
     return mpl_data
 
-
 mpl_data = RGBToPyCmap(turbo_colormap_data)
 plt.register_cmap(name='turbo', data=mpl_data, lut=turbo_colormap_data.shape[0])
 
@@ -331,35 +332,28 @@ def plotfes(pmffilename, pngfilename):
     #px1, py1 = np.genfromtxt("path_C36.txt", unpack=True)
     #px2, py2 = np.genfromtxt("path.txt", unpack=True)
     x, y, z = np.genfromtxt(pmffilename, unpack=True)
-    z = np.clip(z, np.min(z), 20)
-    if colvars is False:
-        x = x / math.pi * 180
-        y = y / math.pi * 180
-        z = z / 4.184
+    if args.zmax is not None:
+        z = np.clip(z, np.min(z), args.zmax)
     binx = len(set(x))
     biny = len(set(y))
     xi = x.reshape(binx, biny)
     yi = y.reshape(binx, biny)
     zi = z.reshape(binx, biny)
     plt.figure()
-    cf = plt.contourf(xi, yi, zi, 40, cmap='turbo')
-    #plt.plot(px1, py1, color = 'orange')
-    #plt.scatter(px1, py1, color = 'grey')
-    #plt.plot(px2, py2, color = 'red')
-    #plt.scatter(px2, py2, color = 'black')
+    cf = plt.contourf(xi, yi, zi, args.level, cmap='turbo')
     ax = plt.gca()
-    ax.set_xlim(-180, 180)
-    ax.set_ylim(-180, 180)
     ax.tick_params(direction = 'in', which = 'major', length=6.0, width = 1.0, top = True, right = True)
     ax.tick_params(direction = 'in', which = 'minor', length=3.0, width = 1.0, top = True, right = True)
     ax.xaxis.get_major_formatter()._usetex = False
     ax.yaxis.get_major_formatter()._usetex = False
-    ax.xaxis.set_major_locator(plt.MaxNLocator(10))
-    ax.yaxis.set_major_locator(plt.MaxNLocator(10))
+    #ax.xaxis.set_major_locator(plt.MaxNLocator(10))
+    #ax.yaxis.set_major_locator(plt.MaxNLocator(10))
     ax.xaxis.set_minor_locator(AutoMinorLocator())
     ax.yaxis.set_minor_locator(AutoMinorLocator())
-    plt.xlabel(r'$\phi$ (degree)')
-    plt.ylabel(r'$\psi$ (degree)')
+    if args.xtitle is not None:
+        plt.xlabel(args.xtitle)
+    if args.ytitle is not None:
+        plt.ylabel(args.ytitle)
     plt.title('Free Energy Surface')
     clb = plt.colorbar()
     clb.ax.set_title("kcal/mol")
@@ -370,8 +364,8 @@ def plotfes(pmffilename, pngfilename):
     #print(clbticks)
     #print(clbticksstr)
     clb.ax.set_yticklabels(clbticksstr, fontsize = 14)
-    plt.tight_layout(pad = 0.2)
-    plt.savefig(pngfilename, dpi=400, transparent=False)
+    #plt.tight_layout(pad = 0.2)
+    plt.savefig(pngfilename, bbox_inches='tight', dpi=300, transparent=False)
     return
 
 plotfes(pmf, png)
