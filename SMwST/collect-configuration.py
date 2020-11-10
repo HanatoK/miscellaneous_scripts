@@ -43,3 +43,16 @@ for result_dirname in result_dirs:
         i_iteration = i_iteration + 1
     i_image = i_image + 1
     i_iteration = 0
+
+# collect the final path into a separate directory
+print('Collect the images of the final path:')
+final_path_directory = os.getcwd() + '/final_path'
+if not os.path.exists(final_path_directory):
+    os.makedirs(final_path_directory)
+for i_image in range(0, num_images):
+    image_dirname = base_directory + '/' + str(i_image).zfill(digits_images)
+    last_iteration = num_iterations - 1
+    last_image_name = image_dirname + '/' + str(last_iteration).zfill(digits_iterations) + '.coor'
+    dest_name = final_path_directory + '/' + str(i_image).zfill(digits_images) + '.coor'
+    print(f'Copying file from {last_image_name} to {dest_name}')
+    copyfile(last_image_name, dest_name)
