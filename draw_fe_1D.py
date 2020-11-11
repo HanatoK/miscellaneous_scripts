@@ -12,13 +12,13 @@ plt.rcParams.update({
     "axes.labelsize": 20,
     "axes.linewidth": 2.0,
     "font.size": 16,
-    "pgf.preamble": [
+    "pgf.preamble": '\n'.join([
          "\\usepackage{units}",          # load additional packages
          "\\usepackage{metalogo}",
          "\\usepackage{unicode-math}",   # unicode math setup
          r"\setmathfont{MathJax_Math}",
          r"\setmainfont{Arimo}",  # serif font via preamble
-         ]
+    ])
 })
 import numpy as np
 from matplotlib.figure import figaspect
