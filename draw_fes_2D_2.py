@@ -66,6 +66,6 @@ def plotfes(pmffilename, pngfilename, xtitle, ytitle, level):
     plt.savefig(pngfilename, dpi=400, bbox_inches = 'tight', transparent=True)
     return
 
-plotfes(args.pmf, args.output, xtitle = args.xtitle, ytitle = args.ytitle, args.level)
+plotfes(args.pmf, args.output, xtitle = args.xtitle, ytitle = args.ytitle, level = args.levels)
 #plotfes('trialanine_apath_cpp+1.czar.pmf', 'apath_2d.png', r'$\xi (s)$', r'$\xi (z)$')
 #plotfes('trialanine_gpath_2d.czar.pmf', 'gpath_2d.png', r'$\xi (s)$', r'$\xi (z)$')
