@@ -18,6 +18,7 @@ proc ParseGromacsIndexFile {filename} {
       continue
     }
   }
+  close $finput
   return $result
 }
 
