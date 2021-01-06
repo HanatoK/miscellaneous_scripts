@@ -26,7 +26,7 @@ print(f'Request URL: {query_url}')
 # Get the first batch of sequences from the database
 # Also read the total number of sequences
 total_count = 0
-output_filename = f'database/{complexity}_{target_group}_{str(0).zfill(5)}.dat'
+output_filename = f'metainfo/{complexity}_{target_group}_{str(0).zfill(5)}.dat'
 with urlopen(query_url) as finput, open(output_filename, 'w') as foutput:
     json_string = finput.read().decode('utf-8')
     json_reader = json.loads(json_string)
@@ -41,7 +41,7 @@ for i in range(1, num_batches + 1):
     start = i * batch_count
     query_url = get_query_url(start, batch_count, complexity, target_group)
     print(f'Request URL: {query_url}')
-    output_filename = f'database/{complexity}_{target_group}_{str(i).zfill(5)}.dat'
+    output_filename = f'metainfo/{complexity}_{target_group}_{str(i).zfill(5)}.dat'
     with urlopen(query_url) as finput, open(output_filename, 'w') as foutput:
         json_string = finput.read().decode('utf-8')
         json_reader = json.loads(json_string)

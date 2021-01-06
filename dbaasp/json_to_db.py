@@ -8,7 +8,7 @@ from sqlite3 import Error
 def property_list_to_dict(list_in):
     result = {}
     for item in list_in:
-        result[item['name']] = float(item['value'])
+        result[item['name']] = item['value']
     return result
 
 def create_connection(db_file):
@@ -26,6 +26,8 @@ def create_table(conn):
                  peptideId INTEGER PRIMARY KEY,
                  name TEXT,
                  sequence TEXT NOT NULL,
+                 nTerminus TEXT,
+                 cTerminus TEXT,
                  synthesisType TEXT NOT NULL,
                  targetGroups TEXT,
                  PDB BLOB,
@@ -49,21 +51,34 @@ def check_record(conn, peptideId):
     else:
         return True
 
-def create_monomer(conn, json_obj):
+def batch_insert(conn, monomer_buffer):
     cur = conn.cursor()
+    sql = '''INSERT INTO monomers(peptideId, name, sequence, nTerminus, cTerminus, synthesisType, targetGroups, PDB, netCharge, targetObjects)
+             VALUES(?,?,?,?,?,?,?,?,?,?) '''
+    cur.executemany(sql, monomer_buffer)
+    conn.commit()
+
+def create_monomer(conn, json_obj, monomer_buffer):
+    #TODO: use executemany to speed-up the insertion
     peptideId = json_obj['id']
     if check_record(conn, peptideId):
         print(f'Monomer id {peptideId} exists. Skip.')
-        return cur.lastrowid
+        return
     name = json_obj['name']
     sequence = json_obj['sequence']
     if sequence is None:
         print(f'No sequence for {peptideId}. Skip.')
-        return cur.lastrowid
+        return
+    nTerminus = json_obj['nTerminus']
+    if nTerminus:
+        nTerminus = json_obj['nTerminus']['name']
+    cTerminus = json_obj['cTerminus']
+    if cTerminus:
+        cTerminus = json_obj['cTerminus']['name']
     synthesisType = json_obj['synthesisType']['name']
     if synthesisType is None:
         print(f'No synthesisType for {peptideId}. Skip.')
-        return cur.lastrowid
+        return
     targetGroups = None
     if json_obj['targetGroups']:
         targetGroups = ''
@@ -75,23 +90,25 @@ def create_monomer(conn, json_obj):
     if json_obj['physicoChemicalProperties']:
         property_dict = property_list_to_dict(json_obj['physicoChemicalProperties'])
         if 'Net Charge' in property_dict.keys():
-            netCharge = property_dict['Net Charge']
+            try:
+                netCharge = float(property_dict['Net Charge'])
+            except ValueError:
+                print(f'Invalid net charge of {peptideId}: {netCharge}')
+                netCharge = None
     targetObjects = None
     if json_obj['targetObjects']:
         targetObjects = ''
         for item in json_obj['targetObjects']:
             targetObjects += '"' + item['name'] + '",'
         targetObjects = targetObjects.strip(',')
-    sql = '''INSERT INTO monomers(peptideId, name, sequence, synthesisType, targetGroups, PDB, netCharge, targetObjects)
-             VALUES(?,?,?,?,?,?,?,?) '''
-    monomer = (peptideId, name, sequence, synthesisType, targetGroups, PDB, netCharge, targetObjects)
+    monomer = (peptideId, name, sequence, nTerminus, cTerminus, synthesisType, targetGroups, PDB, netCharge, targetObjects)
     print(f'Insert {monomer}')
-    cur.execute(sql, monomer)
-    conn.commit()
-    return cur.lastrowid
+    monomer_buffer.append(monomer)
+    return
 
 def main():
     database = 'peptides.db'
+    monomer_buffer = []
     conn = create_connection(database)
     create_table(conn)
     with conn:
@@ -99,7 +116,8 @@ def main():
         for filename in file_list:
             with open(filename, 'r') as finput:
                 json_obj = json.load(finput)
-                create_monomer(conn, json_obj)
+                create_monomer(conn, json_obj, monomer_buffer)
+        batch_insert(conn, monomer_buffer)
 
 if __name__ == '__main__':
     main()

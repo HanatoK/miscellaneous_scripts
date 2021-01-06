@@ -53,6 +53,6 @@ def scrape_json(json_filename, output_prefix):
 
 output_prefix = 'peptides_info/monomer'
 # database files list
-file_list = sorted(glob.glob('database/monomer_Gram-_[0-9][0-9][0-9][0-9][0-9].dat'))
+file_list = sorted(glob.glob('database/monomer_Gram+_[0-9][0-9][0-9][0-9][0-9].dat'))
 for filename in file_list:
     scrape_json(filename, output_prefix)
