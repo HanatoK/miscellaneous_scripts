@@ -10,7 +10,7 @@ histfilename = os.path.basename(args.hist)
 newbasename = os.path.splitext(histfilename)[0] + "_"
 extname = os.path.splitext(histfilename)[1]
 count = 0
-histfile = open(histfilename, "r")
+histfile = open(args.hist, "r")
 firstline = histfile.readline().rstrip()
 for line in histfile:
     count = count + 1

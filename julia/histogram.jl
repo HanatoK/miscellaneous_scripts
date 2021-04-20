@@ -34,21 +34,21 @@ open("GaMD.traj", "r") do traj
   for line in eachline(traj)
     line = strip(line)
     fields = split(line, keepempty=false)
-   if length(fields) > 0 && fields[1] != "#"
-     x = parse(Float64, fields[1])
-     y = parse(Float64, fields[2])
-     index_x, in_boundary_x = HistogramIndex(x, lb_x, ub_x, width_x)
-     index_y, in_boundary_y = HistogramIndex(y, lb_y, ub_y, width_y)
-     if in_boundary_x
-       histogram_x[index_x] += 1
-       bias_energy = parse(Float64, fields[6])
-       histogram_x_meanV[index_x] += bias_energy
-       histogram_x_meanV2[index_x] += bias_energy * bias_energy
-       if in_boundary_y
-         histogram_xy[index_x, index_y] += 1
-       end
-     end
-   end
+    if length(fields) > 0 && fields[1] != "#"
+      x = parse(Float64, fields[1])
+      y = parse(Float64, fields[2])
+      index_x, in_boundary_x = HistogramIndex(x, lb_x, ub_x, width_x)
+      index_y, in_boundary_y = HistogramIndex(y, lb_y, ub_y, width_y)
+      if in_boundary_x
+        histogram_x[index_x] += 1
+        bias_energy = parse(Float64, fields[6])
+        histogram_x_meanV[index_x] += bias_energy
+        histogram_x_meanV2[index_x] += bias_energy * bias_energy
+        if in_boundary_y
+          histogram_xy[index_x, index_y] += 1
+        end
+      end
+    end
   end
 end
 
