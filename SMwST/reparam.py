@@ -13,6 +13,7 @@ from matplotlib.figure import figaspect
 from scipy.interpolate import interp1d
 import matplotlib.ticker as ticker
 from matplotlib.ticker import AutoMinorLocator
+import pandas as pd
 
 # calculate L(i)
 def calc_l_i(image_coordinates, i):
@@ -71,45 +72,58 @@ def reparametrization(image_coordinates):
     check_distances(previous_path)
     next_path = reparam_move(image_coordinates)
     iteration = 1
-    while (iteration < 25):
+    path_reversed = False
+    while (iteration < 5):
         rmsd = path_rmsd(next_path, previous_path)
         stddev = check_distances(next_path)
         print(f'Iteration {iteration:03d}: RMSE = {rmsd:10.7f} ; length stddev = {stddev:10.7f} ; total length = {total_L:10.7f}')
-        previous_path = next_path
-        next_path = reparam_move(next_path)
+        previous_path = np.flip(next_path, axis=0)
+        next_path = np.flip(reparam_move(next_path), axis=0)
+        path_reversed = (not path_reversed)
         iteration = iteration + 1
         total_L = calc_l_i(next_path, len(image_coordinates)-1)
+    if path_reversed:
+        next_path = np.flip(next_path, axis=0)
     return next_path
 
 
 if __name__ == '__main__':
-    N = 20
-    X = np.linspace(-5, 5, N)
-    ref = np.sin(2*X)
-    Y = ref + np.append(np.append(0, np.random.normal(0, 0.3, N-2)), 0)
-    coords = np.c_[X, Y]
+    # N = 20
+    # X = np.linspace(-5, 5, N)
+    # ref = np.sin(2*X)
+    # Y = ref + np.append(np.append(0, np.random.normal(0, 0.3, N-2)), 0)
+    # coords = np.c_[X, Y]
+    # reparam_coords = reparametrization(coords)
+    # np.savetxt('origin.txt', coords, fmt='%12.7f')
+    # np.savetxt('reparam.txt', reparam_coords, fmt='%12.7f')
+    coords = np.array(pd.read_csv("path.txt", delimiter='\s+', header=None))
+    dist_old = np.linalg.norm(np.diff(coords, axis=0), axis=1)
+    X = np.arange(0, len(coords))
     reparam_coords = reparametrization(coords)
-    np.savetxt('origin.txt', coords, fmt='%12.7f')
-    np.savetxt('reparam.txt', reparam_coords, fmt='%12.7f')
+    dist_new = np.linalg.norm(np.diff(reparam_coords, axis=0), axis=1)
+    np.savetxt('old_path.txt', coords, fmt='%12.7f')
+    np.savetxt('reparam_path.txt', reparam_coords, fmt='%12.7f')
+    np.savetxt('dist_old.txt', dist_old, fmt='%12.7f')
+    np.savetxt('dist_new.txt', dist_new, fmt='%12.7f')
     # plotting
-    w, h = figaspect(1/2)
-    plt.plot(X, ref, label='sin(x)', color='red', alpha=0.5)
-    plt.scatter(X, ref, marker='x', color='red')
-    plt.plot(X, Y, label='Origin', color='orange', alpha=0.5)
-    plt.scatter(X, Y, marker='x', color='orange')
-    reparam_X = np.transpose(reparam_coords)[0]
-    reparam_Y = np.transpose(reparam_coords)[1]
-    plt.plot(reparam_X, reparam_Y, label='Reparametrization', color='green', alpha=0.5)
-    plt.scatter(reparam_X, reparam_Y, marker='x', color='green')
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    ax = plt.gca()
-    ax.tick_params(direction='in', which='major', length=6.0, width=1.0, top=True, right=True)
-    ax.tick_params(direction='in', which='minor', length=3.0, width=1.0, top=True, right=True)
-    ax.set_ylim(-2.5, 2.5)
-    ax.xaxis.get_major_formatter()._usetex = False
-    ax.yaxis.get_major_formatter()._usetex = False
-    ax.xaxis.set_minor_locator(AutoMinorLocator())
-    ax.yaxis.set_minor_locator(AutoMinorLocator())
-    plt.legend(prop = {'size': 14}, fancybox = False, frameon = False)
-    plt.savefig('reparam.png', dpi=300, bbox_inches='tight', transparent=False)
+    # w, h = figaspect(1/2)
+    # plt.plot(X, ref, label='sin(x)', color='red', alpha=0.5)
+    # plt.scatter(X, ref, marker='x', color='red')
+    # plt.plot(X, Y, label='Origin', color='orange', alpha=0.5)
+    # plt.scatter(X, Y, marker='x', color='orange')
+    # reparam_X = np.transpose(reparam_coords)[0]
+    # reparam_Y = np.transpose(reparam_coords)[1]
+    # plt.plot(reparam_X, reparam_Y, label='Reparametrization', color='green', alpha=0.5)
+    # plt.scatter(reparam_X, reparam_Y, marker='x', color='green')
+    # plt.xlabel('X')
+    # plt.ylabel('Y')
+    # ax = plt.gca()
+    # ax.tick_params(direction='in', which='major', length=6.0, width=1.0, top=True, right=True)
+    # ax.tick_params(direction='in', which='minor', length=3.0, width=1.0, top=True, right=True)
+    # ax.set_ylim(-2.5, 2.5)
+    # ax.xaxis.get_major_formatter()._usetex = False
+    # ax.yaxis.get_major_formatter()._usetex = False
+    # ax.xaxis.set_minor_locator(AutoMinorLocator())
+    # ax.yaxis.set_minor_locator(AutoMinorLocator())
+    # plt.legend(prop = {'size': 14}, fancybox = False, frameon = False)
+    # plt.savefig('reparam.png', dpi=300, bbox_inches='tight', transparent=False)
