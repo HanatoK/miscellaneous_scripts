@@ -1,0 +1,114 @@
+colvarsTrajFrequency 1000
+colvarsRestartFrequency 5000
+
+colvar {
+    name gpath_s_dihed
+    gspathCV {
+        dihedral {
+            name 001
+            group1 {atomNumbers {5}}
+            group2 {atomNumbers {7}}
+            group3 {atomNumbers {9}}
+            group4 {atomNumbers {15}}
+        }
+        dihedral {
+            name 002
+            group1 {atomNumbers {15}}
+            group2 {atomNumbers {17}}
+            group3 {atomNumbers {19}}
+            group4 {atomNumbers {25}}
+        }
+        dihedral {
+            name 003
+            group1 {atomNumbers {25}}
+            group2 {atomNumbers {27}}
+            group3 {atomNumbers {29}}
+            group4 {atomNumbers {35}}
+        }
+        pathFile ./path_output.txt
+    }
+}
+
+colvar {
+    name gpath_z_dihed
+    gzpathCV {
+        useZsquare on
+        dihedral {
+            name 001
+            group1 {atomNumbers {5}}
+            group2 {atomNumbers {7}}
+            group3 {atomNumbers {9}}
+            group4 {atomNumbers {15}}
+        }
+        dihedral {
+            name 002
+            group1 {atomNumbers {15}}
+            group2 {atomNumbers {17}}
+            group3 {atomNumbers {19}}
+            group4 {atomNumbers {25}}
+        }
+        dihedral {
+            name 003
+            group1 {atomNumbers {25}}
+            group2 {atomNumbers {27}}
+            group3 {atomNumbers {29}}
+            group4 {atomNumbers {35}}
+        }
+        pathFile ./path_output.txt
+    }
+}
+
+colvar {
+    name phi1
+    dihedral {
+        group1 {atomNumbers {5}}
+        group2 {atomNumbers {7}}
+        group3 {atomNumbers {9}}
+        group4 {atomNumbers {15}}
+    }
+}
+
+colvar {
+    name phi2
+    dihedral {
+        group1 {atomNumbers {15}}
+        group2 {atomNumbers {17}}
+        group3 {atomNumbers {19}}
+        group4 {atomNumbers {25}}
+    }
+}
+
+colvar {
+    name phi3
+    dihedral {
+        group1 {atomNumbers {25}}
+        group2 {atomNumbers {27}}
+        group3 {atomNumbers {29}}
+        group4 {atomNumbers {35}}
+    }
+}
+
+harmonic {
+    colvars             gpath_s_dihed
+    centers             0.49
+    forceConstant       1500000.0
+#     targetForceConstant 5000000.0
+#     targetNumSteps      1000000
+    outputenergy        on
+}
+
+harmonicWalls {
+    colvars             gpath_z_dihed
+    lowerWalls          0.0
+    upperWalls          25.0
+    forceConstant       0.025
+    outputenergy        on
+}
+
+# harmonicWalls {
+#     colvars            gpath_s_dihed
+#     lowerWalls         0.0
+#     upperWalls         1.0
+#     forceConstant      20.0
+#     outputenergy       on
+# }
