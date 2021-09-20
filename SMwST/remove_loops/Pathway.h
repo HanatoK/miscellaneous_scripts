@@ -26,4 +26,7 @@ void print_pathway(const std::vector<Image>& images, std::ostream& os);
 std::tuple<Graph, std::vector<size_t>, size_t>
 pathway_to_graph(const std::vector<Image>& images, const double& distance_threshold);
 
+std::vector<Image> remove_loops_graph(const std::vector<Image>& images, const double& distance_threshold_factor);
+std::vector<Image> remove_loops_benoit(const std::vector<Image>& images);
+
 #endif // PATHWAY_H

@@ -158,3 +158,44 @@ pathway_to_graph(const std::vector<Image>& images, const double& distance_thresh
   }
   return std::make_tuple(graph, nodes, image_to_node.at(last_image_index));
 }
+
+std::vector<Image> remove_loops_graph(const std::vector<Image>& images, const double& distance_threshold_factor) {
+  const double avg_dist = average_distance(images);
+  const auto g = pathway_to_graph(images, avg_dist * distance_threshold_factor);
+  auto& graph = std::get<0>(g);
+  const auto& node_image_map = std::get<1>(g);
+  const auto& last_image_index = std::get<2>(g);
+  const auto& path_find_result = graph.Dijkstra(0, last_image_index, Graph::FindPathMode::SumOfEdges);
+  const auto& path_nodes = path_find_result.mPathNodes;
+  std::vector<Image> pathway_new;
+  for (size_t i = 0; i < path_nodes.size(); ++i) {
+    const size_t image_index = node_image_map.at(path_nodes[i]);
+    // fmt::print("Node {:2d}, origin image {:2d}\n", path_nodes[i], image_index);
+    pathway_new.push_back(images[image_index]);
+  }
+  return pathway_new;
+}
+
+std::vector<Image> remove_loops_benoit(const std::vector<Image>& images) {
+  std::vector<Image> results = images;
+  bool has_loop = false;
+  do {
+    has_loop = false;
+    for (size_t i = 1; i < results.size() - 1; ++i) {
+      const auto neighbor_dist = image_distance(results[i-1], results[i]);
+      size_t j = i + 1;
+      for (; j < results.size(); ++j) {
+        const auto dist = image_distance(results[i-1], results[j]);
+        if (dist < neighbor_dist) {
+          has_loop = true;
+          break;
+        }
+      }
+      if (has_loop) {
+        results.erase(results.begin() + i, results.begin() + j);
+        break;
+      }
+    }
+  } while (has_loop);
+  return results;
+}
