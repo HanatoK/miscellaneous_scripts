@@ -14,6 +14,15 @@
 #include <limits>
 #include <chrono>
 
+template <class BidirectionalIterator>
+void reverse (BidirectionalIterator first, BidirectionalIterator last)
+{
+  while ((first!=last)&&(first!=--last)) {
+    std::iter_swap (first,last);
+    ++first;
+  }
+}
+
 class Graph {
 public:
   enum class FindPathMode {
@@ -151,7 +160,7 @@ Graph::FindPathResult Graph::Dijkstra(
   }
   if (path.back() != end)
     path.push_back(start);
-  std::reverse(path.begin(), path.end());
+  ::reverse(path.begin(), path.end());
   std::vector<double> res_distance(distances.size());
   for (size_t i = 0; i < distances.size(); ++i) {
     res_distance[i] = static_cast<double>(distances[i]);

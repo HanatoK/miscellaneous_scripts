@@ -176,7 +176,7 @@ std::vector<Image> remove_loops_graph(const std::vector<Image>& images, const do
   return pathway_new;
 }
 
-std::vector<Image> remove_loops_benoit(const std::vector<Image>& images) {
+std::vector<Image> remove_loops_simple(const std::vector<Image>& images) {
   std::vector<Image> results = images;
   bool has_loop = false;
   do {

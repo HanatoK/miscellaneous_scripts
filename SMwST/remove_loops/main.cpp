@@ -39,13 +39,13 @@ int main(int argc, char* argv[]) {
       std::cerr << "Cannot open output file " << argv[2] << "!\n";
     }
   }
-  const std::vector<Image> pathway_benoit = remove_loops_benoit(pathway_origin);
-  print_pathway(pathway_benoit, std::cout);
+  const std::vector<Image> pathway_simple = remove_loops_simple(pathway_origin);
+  print_pathway(pathway_simple, std::cout);
   if (argc == 4) {
     std::ofstream ofs(argv[3]);
     if (ofs.is_open()) {
-      for (size_t i = 0; i < pathway_benoit.size(); ++i) {
-        const auto& position = pathway_benoit[i].mPosition;
+      for (size_t i = 0; i < pathway_simple.size(); ++i) {
+        const auto& position = pathway_simple[i].mPosition;
         for (size_t j = 0; j < position.size(); ++j) {
           fmt::print(ofs, "{:15.7f}", position[j]);
         }
