@@ -4,7 +4,7 @@ project(RemoveLoops VERSION 1.0)
 project(RemoveLoops LANGUAGES CXX)
 
 # specify the C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -15,6 +15,8 @@ IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.4)
 ELSE (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.4)
   find_package(TCL REQUIRED)
 ENDIF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.4)
+
+find_package(fmt REQUIRED)
 
 set(HEADERS Graph.h Helper.h Pathway.h)
 set(SOURCES Graph.cpp Helper.cpp Pathway.cpp main.cpp)

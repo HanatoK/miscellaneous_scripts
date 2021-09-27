@@ -26,7 +26,7 @@ set num_swarms [expr $num_replicas / $num_images]
 set image_rank [expr int($rank / $num_swarms)]
 set image_master [expr $image_rank * $num_swarms]
 set swarm_rank [expr $rank % $num_swarms]
-set drift_constant 0.2
+set drift_constant 1.0
 
 # Set pi
 set pi 3.1415926535897931
@@ -118,9 +118,9 @@ proc update_current_colvars { } {
       puts "\[Previous\] \[Rank $rank\]: $key = $previous_val"
       puts "\[Current\] \[Rank $rank\]: $key = $val"
       set current_colvars($key) $val
-      set current_colvars_square($key) [expr $val * $val]
-      set displacement($key) [expr $current_colvars($key) - $previous_val]
-      set displacement_square($key) [expr $displacement($key) * $displacement($key)]
+      set current_colvars_square($key) [vecmult $val $val]
+      set displacement($key) [vecsub $current_colvars($key) $previous_val]
+      set displacement_square($key) [vecmult $displacement($key) $displacement($key)]
     }
   }
   if {$is_firsttime == 1} {
@@ -201,63 +201,53 @@ proc prepare_message { } {
   return [list [array get current_colvars] [array get current_colvars_square] [array get previous_colvars] [array get displacement] [array get displacement_square]]
 }
 
-# TODO: How much performance loss by not setting all of the arrays once and then upvaring?
-proc smooth_images { drifts smooth_param } {
-	global num_images num_swarms
-	array set drifts_array $drifts
-	set smoothed [list 0 $drifts_array(0)]
-	for {set i 1} {$i < ($num_images - 1)} {incr i} {
-		array set left_image $drifts_array([expr $i - 1])
-		array set right_image $drifts_array([expr $i + 1])
-		set smooth [list]
-		foreach { key val } $drifts_array($i) {
-			set smooth [concat $smooth $key [list [vecadd [vecscale [expr 1.0 - $smooth_param] $val] [vecscale [expr $smooth_param / 2.0] [vecadd $left_image($key) $right_image($key)]]]]]
-		}
-		set smoothed [concat $smoothed [list $i $smooth]]
-	}
-	set smoothed [concat $smoothed [list [expr $num_images - 1] $drifts_array([expr $num_images - 1])]]
-	return $smoothed
-}
-
-# TODO: How much performance loss by not setting all of the arrays once and then upvaring?
 proc reparameterize_images { drifts } {
-	global image_rank num_swarms num_images
-	array set drifts_array $drifts
-	# Collect the cumulative length metric
-	set arc_lengths [list 0.0]
-	for { set i 1 } { $i < $num_images } { incr i } {
-		array set previous $drifts_array([expr $i - 1])
-		set sum 0.0
-		foreach { key val } $drifts_array($i) {
-			set norm [veclength [vecsub $val $previous($key)]]
-			set sum [expr $sum + [expr $norm * $norm]]
-		}
-		set sum [expr sqrt($sum) + [lindex $arc_lengths [expr $i - 1]]]
-		lappend arc_lengths $sum
-	}
-	# Now redistribute the images, keeping the endpoints fixed
-	set reparam [list 0 $drifts_array(0)]
-	for { set i 1 } { $i < [expr $num_images - 1] } { incr i } {
-		set current_length [expr $i * [lindex $arc_lengths end] / ($num_images - 1)]
-		# Find the correct arc-length
-		for { set j 1 } { $j < [expr $num_images - 1] } { incr j } {
-			if { [lindex $arc_lengths $j] > $current_length } {
-				break
-			}
-		}
-		# Use linear interpolation to propose new coordinates
-		array set left_image $drifts_array([expr $j - 1])
-		array set right_image $drifts_array([expr $j])
-		set current [list]
-		foreach { key } [array names left_image] {
-			set vec [vecsub $right_image($key) $left_image($key)]
-			set linear_factor [expr ($current_length - [lindex $arc_lengths [expr $j - 1]]) / ([lindex $arc_lengths $j] - [lindex $arc_lengths [expr $j - 1]])]
- 			set current [concat $current $key [list [vecadd $left_image($key) [vecscale $linear_factor $vec]]]]
-		}
-		set reparam [concat $reparam [list $i $current]]
-	}
-	set reparam [concat $reparam [list [expr $num_images - 1] $drifts_array([expr $num_images - 1])]]
-	return $reparam
+  # TODO: this code may be incompatible with Cartesian coordinates
+  global num_images
+  array set drifts_array $drifts
+  # build a list of origin images
+  set old_images {}
+  for {set i 0} {$i < $num_images} {incr i} {
+    set tmp_image {}
+    foreach {key val} $drifts_array($i) {
+      lappend tmp_image {*}$val
+    }
+    lappend old_images $tmp_image
+  }
+  puts "====== Dump origin images ======"
+  puts $old_images
+  # remove loops
+  set new_images [remove_loops_simple {*}$old_images]
+  puts "====== Images after removing loops ======"
+  puts $new_images
+  set num_images_removing_loops [llength $new_images]
+  puts "====== Number of images after removing loops: $num_images_removing_loops ======"
+  # reparametrize new images twice
+  set new_images [reparametrize $num_images {*}$new_images]
+#   puts "====== Image after reparametrization (1) ======"
+#   puts $new_images
+  set new_images [reparametrize $num_images {*}$new_images]
+  puts "====== Image after reparametrization (2) ======"
+  puts $new_images
+  # construct the array of new images
+  set reparam [list]
+  for {set i 0} {$i < [expr $num_images]} {incr i} {
+    set current [list]
+    array set current_image $drifts_array($i)
+    set j 0
+    foreach {key} [array names current_image] {
+      set num_elem [llength $current_image($key)]
+      if {$num_elem > 1} {
+        set current [concat $current $key [list [lrange [lindex $new_images $i] [expr $j * $num_elem] [expr ($j + 1) * $num_elem - 1]]]]
+      } else {
+        set current [concat $current $key [list [lindex [lindex $new_images $i] $j]]]
+      }
+      incr j
+    }
+    set reparam [concat $reparam [list $i $current]]
+  }
+  puts $reparam
+  return $reparam
 }
 
 # Set up the callbacks
@@ -312,6 +302,7 @@ proc average_smooth_reparam { data } {
     if $is_angle {
       set new_pos($key) [expr 180 / $pi * atan2([lindex $new_pos($key) 0], [lindex $new_pos($key) 1])]
     } else {
+      # the variable name "drifts" is actually the new positions
       set scaling_factor [expr 1.0 - ((double($i_iter) + 1.0) / double($target_iter)) * 3.0 / 2.0]
       set scaling_factor [expr $scaling_factor > 0.0 ? $scaling_factor : 0.0]
       set mean_drifts [vecscale $diff($key) [expr 1.0 / $num_swarms]]
@@ -332,8 +323,8 @@ proc concat_images { my_data received_data } {
 	return [concat $my_data $received_data]
 }
 proc smooth_reparam_callback { data } {
-	global smooth_param
-	set data [smooth_images $data $smooth_param]
+# 	global smooth_param
+# 	set data [smooth_images $data $smooth_param]
 	set data [reparameterize_images $data]
 	return $data
 }
