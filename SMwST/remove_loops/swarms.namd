@@ -26,7 +26,12 @@ set num_swarms [expr $num_replicas / $num_images]
 set image_rank [expr int($rank / $num_swarms)]
 set image_master [expr $image_rank * $num_swarms]
 set swarm_rank [expr $rank % $num_swarms]
-set drift_constant 1.0
+# this is a factor ranging from 0.0 to 1.0 to scale the moving of images
+set drift_constant 0.1
+# set 1 to remove loops
+set remove_loops 0
+# set 1 to use randomized updating
+set randomized_update 1
 
 # Set pi
 set pi 3.1415926535897931
@@ -119,6 +124,7 @@ proc update_current_colvars { } {
       puts "\[Current\] \[Rank $rank\]: $key = $val"
       set current_colvars($key) $val
       set current_colvars_square($key) [vecmult $val $val]
+      # TODO: handle periodicity!
       set displacement($key) [vecsub $current_colvars($key) $previous_val]
       set displacement_square($key) [vecmult $displacement($key) $displacement($key)]
     }
@@ -203,7 +209,7 @@ proc prepare_message { } {
 
 proc reparameterize_images { drifts } {
   # TODO: this code may be incompatible with Cartesian coordinates
-  global num_images
+  global num_images remove_loops
   array set drifts_array $drifts
   # build a list of origin images
   set old_images {}
@@ -216,16 +222,17 @@ proc reparameterize_images { drifts } {
   }
   puts "====== Dump origin images ======"
   puts $old_images
-  # remove loops
-  set new_images [remove_loops_simple {*}$old_images]
-  puts "====== Images after removing loops ======"
-  puts $new_images
-  set num_images_removing_loops [llength $new_images]
-  puts "====== Number of images after removing loops: $num_images_removing_loops ======"
+  set new_images $old_images
+  if {$remove_loops != 0} {
+    # remove loops
+    set new_images [remove_loops_simple {*}$new_images]
+    puts "====== Images after removing loops ======"
+    puts $new_images
+    set num_images_removing_loops [llength $new_images]
+    puts "====== Number of images after removing loops: $num_images_removing_loops ======"
+  }
   # reparametrize new images twice
   set new_images [reparametrize $num_images {*}$new_images]
-#   puts "====== Image after reparametrization (1) ======"
-#   puts $new_images
   set new_images [reparametrize $num_images {*}$new_images]
   puts "====== Image after reparametrization (2) ======"
   puts $new_images
@@ -292,7 +299,7 @@ proc sum_drifts { my_data received_data } {
 }
 
 proc average_smooth_reparam { data } {
-  global swarm_colvars image_rank num_images num_swarms pi i_iter target_iter drift_constant
+  global swarm_colvars image_rank num_images num_swarms pi i_iter target_iter drift_constant randomized_update
   array set new_pos  [lindex $data 0]
   array set new_pos2 [lindex $data 1]
   array set old_pos  [lindex $data 2]
@@ -302,16 +309,25 @@ proc average_smooth_reparam { data } {
     if $is_angle {
       set new_pos($key) [expr 180 / $pi * atan2([lindex $new_pos($key) 0], [lindex $new_pos($key) 1])]
     } else {
-      # the variable name "drifts" is actually the new positions
-      set scaling_factor [expr 1.0 - ((double($i_iter) + 1.0) / double($target_iter)) * 3.0 / 2.0]
-      set scaling_factor [expr $scaling_factor > 0.0 ? $scaling_factor : 0.0]
-      set mean_drifts [vecscale $diff($key) [expr 1.0 / $num_swarms]]
-      set mean_square_drifts [vecscale $diff2($key) [expr 1.0 / $num_swarms]]
-      set stddev_drifts [vecscale [expr 1.0 * $scaling_factor] [vecsqrt [vecsub $mean_square_drifts [vecmult $mean_drifts $mean_drifts]]]]
-      set random_drifts [vecscale $drift_constant [gaussian $mean_drifts $stddev_drifts]]
-      set drifts($key) [vecadd [vecscale [expr 1.0 / $num_swarms] $old_pos($key)] $random_drifts]
-      puts "\[$key\] old_pos new_pos_no_random new_pos_proposed drifts_proposed scaling_factor"
-      puts "\[$key\] $old_pos($key) $new_pos($key) $drifts($key) $random_drifts $scaling_factor"
+      if {$randomized_update != 0} {
+        # the variable name "drifts" is actually the new positions
+        set scaling_factor [expr 1.0 - ((double($i_iter) + 1.0) / double($target_iter)) * 3.0 / 2.0]
+        set scaling_factor [expr $scaling_factor > 0.0 ? $scaling_factor : 0.0]
+        set mean_new_pos [vecscale $new_pos($key) [expr 1.0 / $num_swarms]]
+        set mean_square_new_pos [vecscale $new_pos2($key) [expr 1.0 / $num_swarms]]
+        set stddev_new_pos [vecscale [expr 1.0 * $scaling_factor] [vecsqrt [vecsub $mean_square_new_pos [vecmult $mean_new_pos $mean_new_pos]]]]
+        set random_new_pos [vecscale $drift_constant [gaussian $mean_new_pos $stddev_new_pos]]
+        # TODO: wrap!!
+        set distance [vecscale $drift_constant [vecsub $random_new_pos [vecscale [expr 1.0 / $num_swarms] $old_pos($key)]]]
+        set drifts($key) [vecadd [vecscale [expr 1.0 / $num_swarms] $old_pos($key)] $distance]
+        puts "\[$key\] old_pos new_pos_no_random new_pos_proposed drifts_proposed scaling_factor"
+        puts "\[$key\] $old_pos($key) $new_pos($key) $drifts($key) $distance $scaling_factor"
+      } else {
+        set mean_drifts [vecscale $diff($key) [expr $drift_constant / $num_swarms]]
+        set drifts($key) [vecadd [vecscale [expr 1.0 / $num_swarms] $old_pos($key)] $mean_drifts]
+        puts "\[$key\] old_pos new_pos_no_random new_pos_proposed drifts_proposed"
+        puts "\[$key\] $old_pos($key) $new_pos($key) $drifts($key) $mean_drifts"
+      }
     }
   }
   # Smooth and reparameterize
