@@ -231,10 +231,9 @@ proc reparameterize_images { drifts } {
     set num_images_removing_loops [llength $new_images]
     puts "====== Number of images after removing loops: $num_images_removing_loops ======"
   }
-  # reparametrize new images twice
   set new_images [reparametrize $num_images {*}$new_images]
-  set new_images [reparametrize $num_images {*}$new_images]
-  puts "====== Image after reparametrization (2) ======"
+  #set new_images [reparametrize $num_images {*}$new_images]
+  puts "====== Image after reparametrization (1) ======"
   puts $new_images
   # construct the array of new images
   set reparam [list]
