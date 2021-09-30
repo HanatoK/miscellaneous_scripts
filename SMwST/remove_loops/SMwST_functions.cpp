@@ -81,6 +81,36 @@ void reparametrize_c_interface(
   }
 }
 
+void smooth_c_interface(
+  double** images_in, int num_images_in, int num_element_in,
+  double smooth_param, double*** images_out, int* num_images_out,
+  int* num_element_out) {
+  Matrix mat(num_images_in, num_element_in);
+  Matrix A(num_images_in, num_images_in);
+  for (int i = 0; i < num_images_in; ++i) {
+    for (int j = 0; j < num_element_in; ++j) {
+      mat(i, j) = images_in[i][j];
+    }
+    if (i == 0 || i == num_images_in - 1) {
+      A(i, i) = 1.0;
+    } else {
+      A(i, i) = 1.0 - smooth_param;
+      A(i, i-1) = 0.5 * smooth_param;
+      A(i, i+1) = 0.5 * smooth_param;
+    }
+  }
+  const Matrix result = A * mat;
+  *num_images_out = num_images_in;
+  *num_element_out = num_element_in;
+  *images_out = (double**)malloc((*num_images_out) * sizeof(double*));
+  for (int i = 0; i < *num_images_out; ++i) {
+    (*images_out)[i] = (double*)malloc((*num_element_out) * sizeof(double));
+    for (int j = 0; j < *num_element_out; ++j) {
+      (*images_out)[i][j] = result(i, j);
+    }
+  }
+}
+
 extern "C" {
 
 int Print_args_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
@@ -419,6 +449,65 @@ int Reparametrize_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *c
   return TCL_OK;
 }
 
+int Smooth_pathway_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
+  double smooth_param;
+  Tcl_Obj **data;
+  if (objc - 1 < 3) {
+    Tcl_WrongNumArgs(interp, 1, objv, (char *)"num_images vec1 vec2 vec3 ...");
+    return TCL_ERROR;
+  }
+  if (Tcl_GetDoubleFromObj(interp, objv[1], &smooth_param) != TCL_OK) {
+    return TCL_ERROR;
+  }
+  const int num_images_old = objc - 2;
+  double** images_old = (double**)malloc(num_images_old * sizeof(double*));
+  int num_elem;
+  for (int i = 0; i < num_images_old; ++i) {
+    if (Tcl_ListObjGetElements(interp, objv[i+2], &num_elem, &data) != TCL_OK) {
+      for (int k = 0; k < i; ++k) {
+        free(images_old[k]);
+      }
+      free(images_old);
+      return TCL_ERROR;
+    } else {
+      images_old[i] = (double*)malloc(num_elem * sizeof(double));
+      for (int j = 0; j < num_elem; ++j) {
+        if (Tcl_GetDoubleFromObj(interp, data[j], &(images_old[i][j])) != TCL_OK) {
+          for (int k = 0; k < i; ++k) {
+            free(images_old[k]);
+          }
+          free(images_old);
+          return TCL_ERROR;
+        }
+      }
+    }
+  }
+  double** images_new = NULL;
+  int num_images_new, num_elem_new;
+  // smooth_c_interface(images_old, num_images_old, num_elem, num_images_required, &images_new, &num_images_new, &num_elem_new);
+  smooth_c_interface(images_old, num_images_old, num_elem, smooth_param, &images_new, &num_images_new, &num_elem_new);
+  Tcl_Obj *tcl_result = Tcl_NewListObj(0, NULL);
+  for (int i = 0; i < num_images_new; ++i) {
+    Tcl_Obj *tmp_list = Tcl_NewListObj(0, NULL);
+    for (int j = 0; j < num_elem_new; ++j) {
+      Tcl_ListObjAppendElement(interp, tmp_list, Tcl_NewDoubleObj(images_new[i][j]));
+    }
+    Tcl_ListObjAppendElement(interp, tcl_result, tmp_list);
+  }
+  Tcl_SetObjResult(interp, tcl_result);
+  /* free the old pathway */
+  for (int i = 0; i < num_images_old; ++i) {
+    free(images_old[i]);
+  }
+  free(images_old);
+  /* free the new pathway */
+  for (int i = 0; i < num_images_new; ++i) {
+    free(images_new[i]);
+  }
+  free(images_new);
+  return TCL_OK;
+}
+
 int Smwst_Init(Tcl_Interp *interp) {
   if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
     return TCL_ERROR;
@@ -433,6 +522,7 @@ int Smwst_Init(Tcl_Interp *interp) {
   Tcl_CreateObjCommand(interp, "remove_loops_simple", Remove_loops_simple_Cmd, NULL, NULL);
   Tcl_CreateObjCommand(interp, "remove_loops_graph", Remove_loops_graph_Cmd, NULL, NULL);
   Tcl_CreateObjCommand(interp, "reparametrize", Reparametrize_Cmd, NULL, NULL);
+  Tcl_CreateObjCommand(interp, "smooth_pathway", Smooth_pathway_Cmd, NULL, NULL);
   return TCL_OK;
 }
 
