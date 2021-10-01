@@ -209,7 +209,7 @@ proc prepare_message { } {
 
 proc reparameterize_images { drifts } {
   # TODO: this code may be incompatible with Cartesian coordinates
-  global num_images remove_loops
+  global num_images remove_loops smooth_param
   array set drifts_array $drifts
   # build a list of origin images
   set old_images {}
@@ -231,9 +231,12 @@ proc reparameterize_images { drifts } {
     set num_images_removing_loops [llength $new_images]
     puts "====== Number of images after removing loops: $num_images_removing_loops ======"
   }
+  # smooth the pathway
+  set new_images [smooth_pathway $smooth_param {*}$new_images]
+  # reparametrize the pathway
   set new_images [reparametrize $num_images {*}$new_images]
-  #set new_images [reparametrize $num_images {*}$new_images]
-  puts "====== Image after reparametrization (1) ======"
+#   set new_images [reparametrize $num_images {*}$new_images]
+  puts "====== Image after reparametrization ======"
   puts $new_images
   # construct the array of new images
   set reparam [list]
@@ -315,7 +318,7 @@ proc average_smooth_reparam { data } {
         set mean_new_pos [vecscale $new_pos($key) [expr 1.0 / $num_swarms]]
         set mean_square_new_pos [vecscale $new_pos2($key) [expr 1.0 / $num_swarms]]
         set stddev_new_pos [vecscale [expr 1.0 * $scaling_factor] [vecsqrt [vecsub $mean_square_new_pos [vecmult $mean_new_pos $mean_new_pos]]]]
-        set random_new_pos [vecscale $drift_constant [gaussian $mean_new_pos $stddev_new_pos]]
+        set random_new_pos [gaussian $mean_new_pos $stddev_new_pos]
         # TODO: wrap!!
         set distance [vecscale $drift_constant [vecsub $random_new_pos [vecscale [expr 1.0 / $num_swarms] $old_pos($key)]]]
         set drifts($key) [vecadd [vecscale [expr 1.0 / $num_swarms] $old_pos($key)] $distance]
