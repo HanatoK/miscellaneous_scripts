@@ -107,13 +107,6 @@ proc update_current_colvars { } {
   global current_colvars_square
   global previous_colvars
   global displacement displacement_square
-  if {$is_firsttime == 0} {
-#     set previous_colvars $current_colvars
-    foreach key [array names current_colvars] {
-      set previous_colvars($key) $current_colvars($key)
-    }
-#     set previous_colvars_square $current_colvars_square
-  }
   foreach { key is_angle } [array get swarm_colvars] {
     set val [colvarvalue $key]
     if $is_angle {
@@ -134,8 +127,22 @@ proc update_current_colvars { } {
   }
 }
 
+proc update_previous_colvars {} {
+  global swarm_colvars previous_colvars is_firsttime
+  if {$is_firsttime == 0} {
+    foreach { key is_angle } [array get swarm_colvars] {
+      set val [colvarvalue $key]
+      if $is_angle {
+        set previous_colvars($key) [list [expr sin($val * $pi / 180)] [expr cos($val * $pi / 180)]]
+      } else {
+        set previous_colvars($key) $val
+      }
+    }
+  }
+}
+
 proc update_centers_from_drift { } {
-	global drift
+	global drift previous_colvars is_firsttime
 	foreach {key pos} [array get drift] {
 		puts "Updating bias_$key"
 		# Parse vector coordinates
@@ -391,6 +398,7 @@ while {$i_iter < $target_iter} {
 		run $equil_steps_per_stage
 		incr i_step $equil_steps_per_stage
 	}
+	update_previous_colvars
 
 	# Output the new images and Tcl restart file
 	set output_base [format "$job_output_root.image%04d.iter%04d" $image_rank $i_iter]
