@@ -58,8 +58,9 @@ def plotfes(pmffilename, pngfilename, title='Free Energy Surface'):
     xi = x.reshape(binx, biny)
     yi = y.reshape(binx, biny)
     zi = z.reshape(binx, biny)
+    z_range = np.linspace(0, 7.2, 25)
     plt.figure()
-    cf = plt.contourf(xi, yi, zi, 20, cmap='turbo')
+    cf = plt.contourf(xi, yi, zi, levels=z_range, cmap='turbo')
     #plt.plot(px1, py1, color = 'orange')
     #plt.scatter(px1, py1, color = 'grey')
     #plt.plot(px2, py2, color = 'red')
@@ -81,14 +82,16 @@ def plotfes(pmffilename, pngfilename, title='Free Energy Surface'):
     plt.ylabel(r'$\psi$ (degree)')
     plt.title(title)
     clb = plt.colorbar()
+
     clb.ax.set_title("kcal/mol", pad=10.0, fontsize=22)
     clb.ax.xaxis.get_major_formatter()._usetex = False
     clb.ax.yaxis.get_major_formatter()._usetex = False
-    clbticks = [i.get_text() for i in clb.ax.get_yticklabels()]
-    clbticksstr = [i.strip('$') for i in clbticks]
-    #print(clbticks)
-    #print(clbticksstr)
-    clb.ax.set_yticklabels(clbticksstr, fontsize = 22)
+    # clbticks = [i.get_text() for i in clb.ax.get_yticklabels()]
+    # clbticksstr = [i.strip('$') for i in clbticks]
+    # print(clbticks)
+    # print(clbticksstr)
+    # clb.ax.set_yticklabels(clbticksstr, fontsize = 22)
+    clb.ax.tick_params(labelsize=22)
     # plt.tight_layout(pad = 0.2)
     plt.savefig(pngfilename, dpi=400, bbox_inches='tight', transparent=False)
     return
