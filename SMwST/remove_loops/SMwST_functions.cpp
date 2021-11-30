@@ -8,10 +8,30 @@
 #include "Pathway.h"
 #include "Reparametrization.h"
 
-// C to C++
+/*!
+ * @brief Removes loops by checking the distance between neighboring images
+ *
+ * @details
+ * This function calculates the distance matrix between any two images on a
+ * pathway, and check if the closest image of i is i-1 or i+1. If not, it will
+ * remove images between j (the index of the nearest image of image i) and i-1
+ * or i+1. It ought to be noted that this is only a C interface to call the C++
+ * function remove_loops_simple() to perform the real calculation.
+ *
+ * @see remove_loops_simple
+ *
+ * @param[in] images_in 2D array of the input pathway
+ * @param[in] num_images_in number of images of the input pathway
+ * @param[in] num_element_in dimensionality of the input images
+ * @param[out] images_out array of the output pathway
+ * @param[out] num_images_out number of images of the output pathway
+ * @param[out] num_element_out dimensionality of the output images
+ *
+ */
 void remove_loops_simple_c_interface(
   double** images_in, int num_images_in, int num_element_in,
   double*** images_out, int* num_images_out, int* num_element_out) {
+  // copy the C-style 2D array to a C++ vector
   std::vector<Image> pathway(num_images_in);
   for (int i = 0; i < num_images_in; ++i) {
     pathway[i].mImageIndex = i;
@@ -19,9 +39,7 @@ void remove_loops_simple_c_interface(
       pathway[i].mPosition.push_back(images_in[i][j]);
     }
   }
-  // print_pathway(pathway, std::cerr);
   const std::vector<Image> new_pathway = remove_loops_simple(pathway);
-  // print_pathway(new_pathway, std::cerr);
   *num_images_out = (int)(new_pathway.size());
   *num_element_out = (int)(new_pathway[0].mPosition.size());
   *images_out = (double**)malloc((*num_images_out) * sizeof(double*));
@@ -33,6 +51,31 @@ void remove_loops_simple_c_interface(
   }
 }
 
+/*!
+ * @brief Removes loops by traversing a graph with Dijkstra's algorithm
+ *
+ * @details
+ * This function construct a graph from the pathway, using the images as nodes.
+ * If the distance between two images is less than a threshold, then these two
+ * images belongs to the same node. The threshold is calculated by a factor,
+ * namely \p distance_threshold_factor, multiplying with the average distance
+ * of the images on the original pathway. After constructing the graph,
+ * Dijkstra's algorithm is used to find out the shortest pathway between the
+ * original endpoints of the pathway, which should be acyclic. Also, this is a
+ * C interface to call the remove_loops_graph C++ function.
+ *
+ * @see remove_loops_graph
+ *
+ * @param[in] images_in 2D array of the input pathway
+ * @param[in] num_images_in number of images of the input pathway
+ * @param[in] num_element_in dimensionality of the input images
+ * @param[in] distance_threshold_factor
+ *   a factor for determining the overlapping images
+ * @param[out] images_out array of the output pathway
+ * @param[out] num_images_out number of images of the output pathway
+ * @param[out] num_element_out dimensionality of the output images
+ *
+ */
 void remove_loops_graph_c_interface(
   double** images_in, int num_images_in, int num_element_in,
   double distance_threshold_factor,
@@ -44,9 +87,7 @@ void remove_loops_graph_c_interface(
       pathway[i].mPosition.push_back(images_in[i][j]);
     }
   }
-  // print_pathway(pathway, std::cerr);
   const std::vector<Image> new_pathway = remove_loops_graph(pathway, distance_threshold_factor);
-  // print_pathway(new_pathway, std::cerr);
   *num_images_out = (int)(new_pathway.size());
   *num_element_out = (int)(new_pathway[0].mPosition.size());
   *images_out = (double**)malloc((*num_images_out) * sizeof(double*));
@@ -58,7 +99,23 @@ void remove_loops_graph_c_interface(
   }
 }
 
-// C to C++
+/*!
+ * @brief Interpolate and re-parametrize a pathway
+ *
+ * @details
+ * The pathway is first interpolated by \p num_images_required * 1000 images,
+ * and then \p num_images_required nearly equidistant images are picked out to
+ * constitute a new pathway (reparametrization). This is a C interface to
+ * initialize an instance of the C++ class Reparametrization.
+ *
+ * @see Reparametrization
+ *
+ * @param[in] images_in 2D array of the input pathway
+ * @param[in] num_images_in number of images of the input pathway
+ * @param[in] num_element_in dimensionality of the input images
+ * @param[in]
+ * TODO
+ */
 void reparametrize_c_interface(
   double** images_in, int num_images_in, int num_element_in, int num_images_required,
   double*** images_out, int* num_images_out, int* num_element_out) {
