@@ -8,10 +8,30 @@
 #include "Pathway.h"
 #include "Reparametrization.h"
 
-// C to C++
+/*!
+ * @brief Removes loops by checking the distance between neighboring images
+ *
+ * @details
+ * This function calculates the distance matrix between any two images on a
+ * pathway, and check if the closest image of i is i-1 or i+1. If not, it will
+ * remove images between j (the index of the nearest image of image i) and i-1
+ * or i+1. It ought to be noted that this is only a C interface to call the C++
+ * function remove_loops_simple() to perform the real calculation.
+ *
+ * @see remove_loops_simple
+ *
+ * @param[in] images_in 2D array of the input pathway
+ * @param[in] num_images_in number of images of the input pathway
+ * @param[in] num_element_in dimensionality of the input images
+ * @param[out] images_out array of the output pathway
+ * @param[out] num_images_out number of images of the output pathway
+ * @param[out] num_element_out dimensionality of the output images
+ *
+ */
 void remove_loops_simple_c_interface(
   double** images_in, int num_images_in, int num_element_in,
   double*** images_out, int* num_images_out, int* num_element_out) {
+  // copy the C-style 2D array to a C++ vector
   std::vector<Image> pathway(num_images_in);
   for (int i = 0; i < num_images_in; ++i) {
     pathway[i].mImageIndex = i;
@@ -19,9 +39,7 @@ void remove_loops_simple_c_interface(
       pathway[i].mPosition.push_back(images_in[i][j]);
     }
   }
-  // print_pathway(pathway, std::cerr);
   const std::vector<Image> new_pathway = remove_loops_simple(pathway);
-  // print_pathway(new_pathway, std::cerr);
   *num_images_out = (int)(new_pathway.size());
   *num_element_out = (int)(new_pathway[0].mPosition.size());
   *images_out = (double**)malloc((*num_images_out) * sizeof(double*));
@@ -33,6 +51,31 @@ void remove_loops_simple_c_interface(
   }
 }
 
+/*!
+ * @brief Removes loops by traversing a graph with Dijkstra's algorithm
+ *
+ * @details
+ * This function construct a graph from the pathway, using the images as nodes.
+ * If the distance between two images is less than a threshold, then these two
+ * images belongs to the same node. The threshold is calculated by a factor,
+ * namely \p distance_threshold_factor, multiplying with the average distance
+ * of the images on the original pathway. After constructing the graph,
+ * Dijkstra's algorithm is used to find out the shortest pathway between the
+ * original endpoints of the pathway, which should be acyclic. Also, this is a
+ * C interface to call the remove_loops_graph C++ function.
+ *
+ * @see remove_loops_graph
+ *
+ * @param[in] images_in 2D array of the input pathway
+ * @param[in] num_images_in number of images of the input pathway
+ * @param[in] num_element_in dimensionality of the input images
+ * @param[in] distance_threshold_factor
+ *   a factor for determining the overlapping images
+ * @param[out] images_out array of the output pathway
+ * @param[out] num_images_out number of images of the output pathway
+ * @param[out] num_element_out dimensionality of the output images
+ *
+ */
 void remove_loops_graph_c_interface(
   double** images_in, int num_images_in, int num_element_in,
   double distance_threshold_factor,
@@ -44,9 +87,7 @@ void remove_loops_graph_c_interface(
       pathway[i].mPosition.push_back(images_in[i][j]);
     }
   }
-  // print_pathway(pathway, std::cerr);
   const std::vector<Image> new_pathway = remove_loops_graph(pathway, distance_threshold_factor);
-  // print_pathway(new_pathway, std::cerr);
   *num_images_out = (int)(new_pathway.size());
   *num_element_out = (int)(new_pathway[0].mPosition.size());
   *images_out = (double**)malloc((*num_images_out) * sizeof(double*));
@@ -58,7 +99,25 @@ void remove_loops_graph_c_interface(
   }
 }
 
-// C to C++
+/*!
+ * @brief Interpolate and re-parametrize a pathway
+ *
+ * @details
+ * The pathway is first interpolated by \p num_images_required * 1000 images,
+ * and then \p num_images_required nearly equidistant images are picked out to
+ * constitute a new pathway (reparametrization). This is a C interface to
+ * initialize an instance of the C++ class Reparametrization.
+ *
+ * @see Reparametrization
+ *
+ * @param[in] images_in 2D array of the input pathway
+ * @param[in] num_images_in number of images of the input pathway
+ * @param[in] num_element_in dimensionality of the input images
+ * @param[in] num_images_required number of images of the interpolated pathway
+ * @param[out] images_out array of the output pathway
+ * @param[out] num_images_out number of images of the output pathway
+ * @param[out] num_element_out dimensionality of the output images
+ */
 void reparametrize_c_interface(
   double** images_in, int num_images_in, int num_element_in, int num_images_required,
   double*** images_out, int* num_images_out, int* num_element_out) {
@@ -81,6 +140,22 @@ void reparametrize_c_interface(
   }
 }
 
+/*!
+ * @brief smooth a pathway
+ *
+ * @details
+ * The new position of image i, z'(i), is determined by:
+ *   z'(i) = 0.5 * a * z(i-1) + (1-a) * z(i) + 0.5 * a * z(i+1),
+ * where the factor a is \p smooth_param.
+ *
+ * @param[in] images_in 2D array of the input pathway
+ * @param[in] num_images_in number of images of the input pathway
+ * @param[in] num_element_in dimensionality of the input images
+ * @param[in] smooth_param smoothing factor
+ * @param[out] images_out array of the output pathway
+ * @param[out] num_images_out number of images of the output pathway
+ * @param[out] num_element_out dimensionality of the output images
+ */
 void smooth_c_interface(
   double** images_in, int num_images_in, int num_element_in,
   double smooth_param, double*** images_out, int* num_images_out,
@@ -113,6 +188,9 @@ void smooth_c_interface(
 
 extern "C" {
 
+/*!
+ * @brief function for testing TCL C interface
+ */
 int Print_args_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   Tcl_Channel stdout_channel = Tcl_GetStdChannel(TCL_STDOUT);
   const char* sep = "\n";
@@ -123,6 +201,9 @@ int Print_args_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *cons
   return TCL_OK;
 }
 
+/*!
+ * @brief implementation of the vecmult command (element-wise multiplication)
+ */
 int Vecmult_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem;
   Tcl_Obj **data;
@@ -169,6 +250,9 @@ int Vecmult_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const o
   return TCL_OK;
 }
 
+/*!
+ * @brief implementation of the vecsqrt command (element-wise square root)
+ */
 int Vecsqrt_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem;
   Tcl_Obj **data;
@@ -195,6 +279,14 @@ int Vecsqrt_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const o
   return TCL_OK;
 }
 
+/*!
+ * @brief get a random number that follows the normal distribution
+ *
+ * @param[in] mean mean of the normal distribution
+ * @param[in] sigma standard deviation of the normal distribution
+ * @return a random number drawn from the normal distribution with \p mean
+ *         as the mean value and \p sigma as the standard deviation
+ */
 double Gaussian(double mean, double sigma) {
   static int has_saved = 0;
   static double saved = 0.0;
@@ -220,6 +312,10 @@ double Gaussian(double mean, double sigma) {
   }
 }
 
+/*!
+ * @brief TCL-C interface for getting a list of random numbers following
+ *        normal distributions
+ */
 int Gaussian_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem_mean;
   int num_elem_sigma;
@@ -253,6 +349,9 @@ int Gaussian_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const 
   return TCL_OK;
 }
 
+/*!
+ * @brief TCL-C interface for removing loops by graph
+ */
 int Remove_loops_graph_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem;
   Tcl_Obj **data;
@@ -322,6 +421,9 @@ int Remove_loops_graph_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_O
   return TCL_OK;
 }
 
+/*!
+ * @brief TCL-C interface for removing loops by Benoit's approach
+ */
 int Remove_loops_simple_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem;
   Tcl_Obj **data;
@@ -391,6 +493,9 @@ int Remove_loops_simple_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_
   return TCL_OK;
 }
 
+/*!
+ * @brief TCL-C interface for reparametrization
+ */
 int Reparametrize_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_images_required;
   Tcl_Obj **data;
@@ -449,6 +554,9 @@ int Reparametrize_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *c
   return TCL_OK;
 }
 
+/*!
+ * @brief TCL-C interface for smoothing the pathway
+ */
 int Smooth_pathway_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   double smooth_param;
   Tcl_Obj **data;

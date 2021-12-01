@@ -5,7 +5,9 @@
 #include <cmath>
 #include <utility>
 #include <map>
+#ifdef USE_FMT
 #include <fmt/format.h>
+#endif
 
 void read_pathway(std::istream& input_stream, std::vector<Image>& images) {
   std::vector<std::string> tmp_fields;
@@ -65,7 +67,9 @@ void remove_self_loops(std::vector<Image>& images, const double& distance_thresh
   // return has_self_loops;
 }
 
+
 void print_pathway(const std::vector<Image>& images, std::ostream& os) {
+#ifdef USE_FMT
   for (size_t i = 0; i < images.size(); ++i) {
     os << fmt::format("{:3d}", i);
     for (size_t j = 0; j < images[i].mPosition.size(); ++j) {
@@ -77,6 +81,7 @@ void print_pathway(const std::vector<Image>& images, std::ostream& os) {
     }
     os << "\n";
   }
+#endif
 }
 
 std::tuple<Graph, std::vector<size_t>, size_t>
@@ -107,12 +112,16 @@ pathway_to_graph(const std::vector<Image>& images, const double& distance_thresh
     if (add_image) {
       nodes.push_back(current_image_index);
 #ifdef DEBUG
+#ifdef USE_FMT
       fmt::print("current_image_index = {} ; node_index = {}\n", current_image_index, nodes.size() - 1);
+#endif
 #endif
       image_to_node[current_image_index] = nodes.size() - 1;
     }
 #ifdef DEBUG
+#ifdef USE_FMT
     fmt::print("Edge from image {:02d} to {:02d}\n", previous_image_index, current_image_index);
+#endif
 #endif
     image_connections.push_back(std::make_pair(previous_image_index, current_image_index));
     previous_image_index = current_image_index;
@@ -129,7 +138,9 @@ pathway_to_graph(const std::vector<Image>& images, const double& distance_thresh
       if (left == right) continue;
       if (source_image_index == left) {
 #ifdef DEBUG
+#ifdef USE_FMT
         fmt::print("i = {} ; right = {}\n", i, right);
+#endif
 #endif
         edges.push_back({i, image_to_node.at(right), 1.0});
       }
@@ -137,6 +148,7 @@ pathway_to_graph(const std::vector<Image>& images, const double& distance_thresh
   }
   graph.setEdges(edges);
 #ifdef DEBUG
+#ifdef USE_FMT
   graph.printGraph(std::cout);
   graph.summary(std::cout);
   fmt::print("Node to image:\n");
@@ -148,8 +160,9 @@ pathway_to_graph(const std::vector<Image>& images, const double& distance_thresh
     }
     fmt::print("\n");
   }
-#endif
   fmt::print("last_image_index = {:2d} \n", last_image_index);
+#endif
+#endif
   // fix the last index back to the origin endpoint
   if (last_image_index != images.back().mImageIndex) {
     size_t last_node_index = image_to_node.at(last_image_index);

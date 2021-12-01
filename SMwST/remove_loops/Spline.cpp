@@ -1,7 +1,5 @@
 #include "Spline.h"
 
-#include <fmt/format.h>
-
 InterpolateBase::InterpolateBase(const std::vector<double>& X,
                                  const std::vector<double>& Y,
                                  const size_t M, const bool equidistant):

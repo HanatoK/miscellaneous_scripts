@@ -2,8 +2,6 @@
 #define REPARAMETRIZATION_H
 
 #include "Spline.h"
-#include <fmt/format.h>
-#include <cstddef>
 
 class Reparametrization {
 public:
