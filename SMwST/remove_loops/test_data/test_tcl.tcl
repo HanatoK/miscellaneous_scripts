@@ -58,3 +58,9 @@ if {$num_images == [llength $new_path]} {
     puts [format "%15.7f" $distance]
   }
 }
+
+# test Gaussian random numbers
+set mean {1.0 2.0 3.0}
+set sigma {0.5 0.9 5.0}
+set rand_x [gaussian $mean $sigma]
+puts $rand_x

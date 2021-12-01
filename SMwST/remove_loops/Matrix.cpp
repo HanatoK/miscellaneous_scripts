@@ -2,7 +2,9 @@
 
 #include <stdexcept>
 #include <random>
+#ifdef USE_FMT
 #include <fmt/format.h>
+#endif
 
 Matrix::Matrix(): m_nrows(0), m_ncols(0) {}
 
@@ -86,7 +88,9 @@ size_t Matrix::numColumns() const {
 ostream& Matrix::print(ostream& os) const {
   for (size_t i = 0; i < m_nrows; ++i) {
     for (size_t j = 0; j < m_ncols; ++j) {
+#ifdef USE_FMT
       os << fmt::format(" {:12.7f}", (*this)(i, j));
+#endif
     }
     os << '\n';
   }
@@ -362,7 +366,9 @@ tuple<Matrix, Matrix> realSymmetricEigenSolver::solve() {
     JacobiSweep();
     off_diag_sum = std::sqrt(m_matA.diagonalSquaredSum() / num_diagonal_elements);
     ++iteration;
+#ifdef USE_FMT
     std::cout << fmt::format("Sweep {:02d}: off-diagonal squared sum = {:8.4f}\n", iteration, off_diag_sum);
+#endif
     if (iteration >= max_iteration) {
       std::cerr << "Maximum iterations reached in Eigen solver!\n";
       break;

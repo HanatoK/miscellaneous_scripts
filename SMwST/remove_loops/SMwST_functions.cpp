@@ -113,8 +113,10 @@ void remove_loops_graph_c_interface(
  * @param[in] images_in 2D array of the input pathway
  * @param[in] num_images_in number of images of the input pathway
  * @param[in] num_element_in dimensionality of the input images
- * @param[in]
- * TODO
+ * @param[in] num_images_required number of images of the interpolated pathway
+ * @param[out] images_out array of the output pathway
+ * @param[out] num_images_out number of images of the output pathway
+ * @param[out] num_element_out dimensionality of the output images
  */
 void reparametrize_c_interface(
   double** images_in, int num_images_in, int num_element_in, int num_images_required,
@@ -138,6 +140,22 @@ void reparametrize_c_interface(
   }
 }
 
+/*!
+ * @brief smooth a pathway
+ *
+ * @details
+ * The new position of image i, z'(i), is determined by:
+ *   z'(i) = 0.5 * a * z(i-1) + (1-a) * z(i) + 0.5 * a * z(i+1),
+ * where the factor a is \p smooth_param.
+ *
+ * @param[in] images_in 2D array of the input pathway
+ * @param[in] num_images_in number of images of the input pathway
+ * @param[in] num_element_in dimensionality of the input images
+ * @param[in] smooth_param smoothing factor
+ * @param[out] images_out array of the output pathway
+ * @param[out] num_images_out number of images of the output pathway
+ * @param[out] num_element_out dimensionality of the output images
+ */
 void smooth_c_interface(
   double** images_in, int num_images_in, int num_element_in,
   double smooth_param, double*** images_out, int* num_images_out,
@@ -170,6 +188,9 @@ void smooth_c_interface(
 
 extern "C" {
 
+/*!
+ * @brief function for testing TCL C interface
+ */
 int Print_args_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   Tcl_Channel stdout_channel = Tcl_GetStdChannel(TCL_STDOUT);
   const char* sep = "\n";
@@ -180,6 +201,9 @@ int Print_args_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *cons
   return TCL_OK;
 }
 
+/*!
+ * @brief implementation of the vecmult command (element-wise multiplication)
+ */
 int Vecmult_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem;
   Tcl_Obj **data;
@@ -226,6 +250,9 @@ int Vecmult_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const o
   return TCL_OK;
 }
 
+/*!
+ * @brief implementation of the vecsqrt command (element-wise square root)
+ */
 int Vecsqrt_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem;
   Tcl_Obj **data;
@@ -252,6 +279,14 @@ int Vecsqrt_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const o
   return TCL_OK;
 }
 
+/*!
+ * @brief get a random number that follows the normal distribution
+ *
+ * @param[in] mean mean of the normal distribution
+ * @param[in] sigma standard deviation of the normal distribution
+ * @return a random number drawn from the normal distribution with \p mean
+ *         as the mean value and \p sigma as the standard deviation
+ */
 double Gaussian(double mean, double sigma) {
   static int has_saved = 0;
   static double saved = 0.0;
@@ -277,6 +312,10 @@ double Gaussian(double mean, double sigma) {
   }
 }
 
+/*!
+ * @brief TCL-C interface for getting a list of random numbers following
+ *        normal distributions
+ */
 int Gaussian_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem_mean;
   int num_elem_sigma;
@@ -310,6 +349,9 @@ int Gaussian_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const 
   return TCL_OK;
 }
 
+/*!
+ * @brief TCL-C interface for removing loops by graph
+ */
 int Remove_loops_graph_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem;
   Tcl_Obj **data;
@@ -379,6 +421,9 @@ int Remove_loops_graph_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_O
   return TCL_OK;
 }
 
+/*!
+ * @brief TCL-C interface for removing loops by Benoit's approach
+ */
 int Remove_loops_simple_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_elem;
   Tcl_Obj **data;
@@ -448,6 +493,9 @@ int Remove_loops_simple_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_
   return TCL_OK;
 }
 
+/*!
+ * @brief TCL-C interface for reparametrization
+ */
 int Reparametrize_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   int num_images_required;
   Tcl_Obj **data;
@@ -506,6 +554,9 @@ int Reparametrize_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *c
   return TCL_OK;
 }
 
+/*!
+ * @brief TCL-C interface for smoothing the pathway
+ */
 int Smooth_pathway_Cmd(ClientData cdata, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]) {
   double smooth_param;
   Tcl_Obj **data;
