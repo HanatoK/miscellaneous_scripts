@@ -9,13 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-# in 2.6+, stubs are split off into a separate file
-if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.4)
-  find_package(TclStub REQUIRED)
-else (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.4)
-  find_package(TCL REQUIRED)
-endif (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 2.4)
-
+find_package(TclStub REQUIRED)
 find_package(fmt QUIET)
 
 if (${fmt_FOUND})

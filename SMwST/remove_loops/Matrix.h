@@ -16,6 +16,10 @@ using std::initializer_list;
 using std::ostream;
 using std::tuple;
 
+#ifdef minor
+#undef minor
+#endif
+
 class Matrix {
 public:
   Matrix();
