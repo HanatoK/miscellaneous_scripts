@@ -18,7 +18,7 @@ def reparametrize(positions, num_images=None, resolution=1000):
     all_lengths = np.sqrt(np.sum(adjacent_diff * adjacent_diff, axis=1))
     total_length = np.sum(all_lengths)
     # find points on the spline
-    adjacent_length = total_length / (len(positions) - 1)
+    adjacent_length = total_length / (num_images - 1)
     idx = 1
     sum_l = 0
     result = [new_Y[0]]
