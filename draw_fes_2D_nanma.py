@@ -59,7 +59,7 @@ def plotfes(pmffilename, pngfilename, title='Free Energy Surface'):
     yi = y.reshape(binx, biny)
     zi = z.reshape(binx, biny)
     z_range = np.linspace(0, 7.2, 25)
-    plt.figure()
+    # plt.figure()
     cf = plt.contourf(xi, yi, zi, levels=z_range, cmap='turbo')
     #plt.plot(px1, py1, color = 'orange')
     #plt.scatter(px1, py1, color = 'grey')
