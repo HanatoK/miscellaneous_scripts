@@ -9,6 +9,10 @@ Select atoms in VMD by a GROMACS index file. Usage:
 - Select from the GROMACS index file such as `index.ndx`: `SelectionFromIndexFile index.ndx`.
 - If your `index.ndx` contains a selection like `[ Protein ]`, then you can access the command in VMD by `$Protein`. For example, you can measure the center of selected atoms by `measure center $Protein`.
 
-## delete_water.tcl
+## delete\_water.tcl
 
 Remove water molecules around proteins.
+
+## change\_waterbox.tcl
+
+Change the water box for separation in the ACE-RBD binding complex.
