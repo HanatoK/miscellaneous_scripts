@@ -28,9 +28,8 @@ def dump_dense_weights_biases(model):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('model_file', type=str, help='model file of previous round')
-    # parser.add_argument('--previous_encoder_model', type=str, help='encoder model of previous round')
-    parser.add_argument('weights_file', type=str, help='weight file of previous round')
+    parser.add_argument('model_file', type=str, help='model file of the tensorflow trained model (JSON format)')
+    parser.add_argument('weights_file', type=str, help='weight file of the tensorflow trained model (HDF5 format)')
     args = parser.parse_args()
     model = load_model(args.model_file, args.weights_file)
     dump_dense_weights_biases(model)
