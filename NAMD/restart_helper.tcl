@@ -19,11 +19,11 @@ proc read_restart_step {xsc_filename} {
   return $step
 }
 
-proc new_restart_prefix {prefix {start_index 0}} {
+proc find_prefix {basename {start_index 0} {old_prefix ""}} {
   # construct the output filename
-  set new_prefix $prefix
+  set new_prefix $basename
   if {${start_index} > 0} {
-    set new_prefix "${prefix}+${start_index}"
+    set new_prefix "${basename}+${start_index}"
   }
   set test_filename "${new_prefix}.restart.coor"
   # test file existence
@@ -31,8 +31,18 @@ proc new_restart_prefix {prefix {start_index 0}} {
     set new_index [expr ${start_index} + 1]
     # find next index if not exists
     puts "File ${test_filename} exists, test next index ${new_index}"
-    return [new_restart_prefix $prefix $new_index]
+    return [find_prefix $basename $new_index ${new_prefix}]
   } else {
-    return ${new_prefix}
+    return [list ${new_prefix} ${old_prefix}]
   }
+}
+
+proc new_prefix {basename {start_index 0}} {
+  set p [find_prefix $basename ${start_index} ""]
+  return [lindex $p 0]
+}
+
+proc old_prefix {basename {start_index 0}} {
+  set p [find_prefix $basename ${start_index} ""]
+  return [lindex $p 1]
 }
