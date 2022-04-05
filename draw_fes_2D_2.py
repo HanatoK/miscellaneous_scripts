@@ -59,10 +59,10 @@ def plotfes(pmffilename, pngfilename, xtitle, ytitle, level):
     clb.ax.set_title("kcal/mol", fontsize=20)
     clb.ax.xaxis.get_major_formatter()._usetex = False
     clb.ax.yaxis.get_major_formatter()._usetex = False
-    clbticks = [float(i.get_position()[1]) for i in clb.ax.get_yticklabels()]
-    clbticksstr = ['{:.1f}'.format(i) for i in clbticks]
-    print(clbticksstr)
-    clb.ax.set_yticklabels(clbticksstr, fontsize = 20)
+    # clbticks = [float(i.get_position()[1]) for i in clb.ax.get_yticklabels()]
+    # clbticksstr = ['{:.1f}'.format(i) for i in clbticks]
+    # print(clbticksstr)
+    # clb.ax.set_yticklabels(clbticksstr, fontsize = 20)
     plt.savefig(pngfilename, dpi=400, bbox_inches = 'tight', transparent=True)
     return
 
