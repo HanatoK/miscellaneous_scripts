@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+#!/usr/bin/env python3
+import numpy as np
+import pandas as pd
+from scipy import stats
+
 class multivariate_linear_regression:
 
     def __init__(self, X, Y):
@@ -23,22 +28,27 @@ class multivariate_linear_regression:
     def get_b(self):
         return self.factors[0]
 
-    def get_r2_score(self, X, y_true, sample_weight=None):
-        import numpy as np
+    def get_r2_score(self, X, y_true, sample_weight=None, mean_function=None, diff2_function=None):
         if sample_weight is None:
             sample_weight = np.ones(X.shape[0])
+        if mean_function is None:
+            def default_mean_function(data, sample_weight):
+                return np.sum(data * np.transpose([sample_weight]), axis=0) / np.sum(sample_weight)
+            mean_function = default_mean_function
+        if diff2_function is None:
+            def default_diff2(X1, X2, sample_weight):
+                diff = X1 - X2
+                return np.sum(np.square(diff) * np.transpose([sample_weight]), axis=0) / np.sum(sample_weight)
+            diff2_function = default_diff2
         y_pred = self.evaluate(X)
-        y_res = y_true - y_pred
-        u = np.sum(np.square(y_res) * np.transpose([sample_weight]), axis=0) / np.sum(sample_weight)
-        y_true_mean = np.sum(y_true * np.transpose([sample_weight]), axis=0) / np.sum(sample_weight)
-        y_true_res = y_true - y_true_mean
-        v = np.sum(np.square(y_true_res) * np.transpose([sample_weight]), axis=0) / np.sum(sample_weight)
+        u = diff2_function(y_pred, y_true, sample_weight)
+        y_true_mean = mean_function(y_true, sample_weight)
+        v = diff2_function(y_true, y_true_mean, sample_weight)
         total_r2 = 1.0 - np.sum(u) / np.sum(v)
         component_r2 = 1.0 - u / v
         return total_r2, component_r2
 
     def evaluate(self, X):
-        import numpy as np
         # evaluate a new dataset X
         A = np.insert(X, 0, 1.0, axis=1)
         return np.matmul(A, self.factors)
@@ -48,13 +58,13 @@ class multivariate_linear_regression_sklearn:
 
     def __init__(self, X, Y):
         from sklearn import linear_model
-        ols = linear_model.LinearRegression()
-        model = ols.fit(X, Y)
-        self.factors = np.insert(model.coef_.T, 0, model.intercept_, axis=0).copy()
+        self.ols = linear_model.LinearRegression()
+        self.model = self.ols.fit(X, Y)
+        self.factors = np.insert(self.model.coef_.T, 0, self.model.intercept_, axis=0).copy()
 
     def get_K(self):
         return self.factors[1:]
-    
+
     def get_b(self):
         return self.factors[0]
 
@@ -66,10 +76,59 @@ class multivariate_linear_regression_sklearn:
         return total_r2, component_r2
 
     def evaluate(self, X):
-        import numpy as np
         # evaluate a new dataset X
         A = np.insert(X, 0, 1.0, axis=1)
         return np.matmul(A, self.factors)
+
+def dihedral_mean(data, sample_weight):
+    sin_data = np.sin(data)
+    cos_data = np.cos(data)
+    tmp1 = np.sum(np.arctan2(sin_data, cos_data) * np.transpose([sample_weight]), axis=0) / np.sum(sample_weight)
+    return tmp1
+
+def dihedral_diff2(X1, X2, sample_weight):
+    # period is from -pi to pi
+    def wrap(x, lower, upper):
+        import numpy as np
+        period = upper - lower
+        if x >= lower and x <= upper:
+            return x
+        if x < lower:
+            dist = lower - x
+            num_period = np.floor(dist / period)
+            tmp = np.abs(dist / period - np.round(dist / period))
+            if np.isclose(tmp, 0):
+                x += num_period * period
+            else:
+                x += (num_period + 1) * period
+        if x > upper:
+            dist = x - upper
+            num_period = np.floor(dist / period)
+            tmp = np.abs(dist / period - np.round(dist / period))
+            if np.isclose(tmp, 0):
+                x -= num_period * period
+            else:
+                x -= (num_period + 1) * period
+        return x
+
+    def periodic_dist(x, ref, lower, upper):
+        import numpy as np
+        vec_wrap = np.vectorize(wrap)
+        x = vec_wrap(x, lower, upper)
+        ref = vec_wrap(ref, lower, upper)
+        dist = x - ref
+        period = upper - lower
+        length = 0.5 * period
+        return np.where(np.abs(dist)>length, np.where(dist<0, dist+period, dist-period), dist)
+        # if np.abs(dist) > length:
+        #     if dist < 0:
+        #         dist += period
+        #     else:
+        #         dist -= period
+        # return dist
+
+    diff = periodic_dist(X1, X2, -np.pi, np.pi)
+    return np.sum(np.square(diff) * np.transpose([sample_weight]), axis=0) / np.sum(sample_weight)
 
 if __name__ == '__main__':
     import numpy as np
