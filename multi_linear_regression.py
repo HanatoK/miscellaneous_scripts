@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-#!/usr/bin/env python3
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -52,6 +50,45 @@ class multivariate_linear_regression:
         # evaluate a new dataset X
         A = np.insert(X, 0, 1.0, axis=1)
         return np.matmul(A, self.factors)
+
+class multivariate_linear_regression_2:
+
+    def __init__(self, X, Y):
+        Y_T = Y.transpose()
+        factors = list()
+        for l in range(0, Y.shape[1]):
+            factors.append(self._regress_1d(X, Y_T[l]))
+        self.factors = np.transpose(factors)
+        #print(self.factors)
+
+    def _regress_1d(self, X, y):
+        # y: n-elements vector
+        # d: number of regressors
+        n = X.shape[0]
+        d = X.shape[1]
+        # A: dxd matrix
+        # b: d-elements column vector
+        #A = np.zeros((d, d))
+        b = np.zeros(d)
+        X_T = X.transpose()
+        K1 = np.full((n, n), -1.0)
+        np.fill_diagonal(K1, n - 1.0)
+        A = np.matmul(X_T, np.matmul(K1, X))
+        for p in range(0, d):
+            b[p] = n * np.sum(X_T[p] * y) - np.sum(y) * np.sum(X_T[p])
+            #for q in range(p, d):
+                #A[p][q] = n * np.sum(X_T[p] * X_T[q]) - np.sum(X_T[p]) * np.sum(X_T[q])
+                #if q > p:
+                    #A[q][p] = A[p][q]
+        m = np.linalg.solve(A, b)
+        m_0 = (np.sum(y) - np.sum(np.dot(X, m))) / n
+        return np.insert(m, 0, m_0)
+
+    def get_K(self):
+        return self.factors[1:]
+
+    def get_b(self):
+        return self.factors[0]
 
 # multivariate linear regression by gradient descent
 class multivariate_linear_regression_sklearn:
@@ -144,6 +181,8 @@ if __name__ == '__main__':
     print(lr_model.factors)
     print(lr_model.evaluate(X))
     print(lr_model.get_r2_score(X, Y))
+    lr_model = multivariate_linear_regression_2(X, Y)
+    print(f'Using maximum likelihood:\n{lr_model.factors}')
     lr_model = multivariate_linear_regression_sklearn(X, Y)
     print(X)
     print(Y)
@@ -164,3 +203,5 @@ if __name__ == '__main__':
     print(lr_model.factors)
     print(lr_model.evaluate(X))
     print(lr_model.get_r2_score(X, Y))
+    lr_model = multivariate_linear_regression_2(X, Y)
+    print(f'Using maximum likelihood:\n{lr_model.factors}')
