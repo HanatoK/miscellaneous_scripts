@@ -37,6 +37,31 @@ def reparametrize(positions, num_images=None, resolution=1000):
     return np.asarray(result), np.asarray(derivative)
 
 
+def reparametrize_no_for_loop(positions, num_images=None, resolution=1000):
+    # do interpolation
+    X = np.linspace(0, resolution, len(positions))
+    # print(X)
+    fX = CubicSpline(X, positions, axis=0, bc_type='natural')
+    df = fX.derivative()
+    if num_images is None:
+        num_images = len(positions)
+    new_X = np.linspace(0, resolution, num_images * resolution)
+    new_Y = fX(new_X)
+    new_dY = df(new_X)
+    # compute the total length
+    adjacent_diff = np.diff(new_Y, axis=0)
+    all_lengths = np.sqrt(np.sum(adjacent_diff * adjacent_diff, axis=1))
+    total_length = np.sum(all_lengths)
+    # find points on the spline
+    adjacent_length = total_length / (num_images - 1)
+    cumsum_l = np.cumsum(all_lengths[:-1])
+    cumsum_adj_len = np.arange(1, num_images - 1) * adjacent_length
+    idx = np.searchsorted(cumsum_l, cumsum_adj_len) + 1
+    result = np.concatenate((np.asarray([new_Y[0]]), new_Y[idx], np.asarray([new_Y[-1]])))
+    derivative = np.concatenate((np.asarray([new_dY[0]]), new_dY[idx], np.asarray([new_dY[-1]])))
+    return np.asarray(result), np.asarray(derivative)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('path', help='path position file')
@@ -47,7 +72,7 @@ def main():
     positions = pd.read_csv(args.path, delimiter='\s+', comment='#', header=None).to_numpy()
     Y = positions.copy()
     for i in range(0, args.num_iterations):
-        Y, dY = reparametrize(positions=Y, num_images=args.num_images)
+        Y, dY = reparametrize_no_for_loop(positions=Y, num_images=args.num_images)
     # write the output
     with open(args.output, 'w') as fOutput:
         for point in Y:
