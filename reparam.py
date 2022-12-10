@@ -85,10 +85,11 @@ def main():
     for i, l in enumerate(all_lengths):
         print(f"Distance between image {i} and {i+1}: {l:12.5f}")
     # debug: show moved distances
-    dist_Y_pos = Y - positions
-    distances = np.sqrt(np.sum(dist_Y_pos * dist_Y_pos, axis=1))
-    for i, l in enumerate(distances):
-        print(f'Image {i} has moved: {l:12.5f}')
+    if np.shape(Y) == np.shape(positions):
+        dist_Y_pos = Y - positions
+        distances = np.sqrt(np.sum(dist_Y_pos * dist_Y_pos, axis=1))
+        for i, l in enumerate(distances):
+            print(f'Image {i} has moved: {l:12.5f}')
     # debug: show the derivatives
     print(f'Derivative from cubic splines:')
     # np.set_printoptions(formatter={'float': '{: 12.5ff}'.format})
