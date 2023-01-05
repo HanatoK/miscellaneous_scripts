@@ -2,16 +2,21 @@
 import matplotlib
 import os
 import argparse
-matplotlib.use("pgf")
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.figure import figaspect
+from scipy.interpolate import interp1d
+import matplotlib.ticker as ticker
 plt.rcParams.update({
     "pgf.texsystem": "lualatex",
-    "font.family": "serif",  # use serif/main font for text elements
-    "text.usetex": True,     # use inline math for ticks
+    "font.family": "FreeSans",  # use serif/main font for text elements
+    "text.usetex": False,     # use inline math for ticks
     "pgf.rcfonts": False,    # don't setup fonts from rc parameters
+    "mathtext.fontset": "stix",
     "axes.labelsize": 24,
     "axes.linewidth": 2.0,
     "font.size": 20,
+    "axes.unicode_minus": False,
     "pgf.preamble": '\n'.join([
          "\\usepackage{units}",
          "\\usepackage{metalogo}",
@@ -20,15 +25,14 @@ plt.rcParams.update({
          r"\setmainfont{Arimo}",
     ])
 })
-import numpy as np
-from matplotlib.figure import figaspect
-from scipy.interpolate import interp1d
-import matplotlib.ticker as ticker
 
-parser = argparse.ArgumentParser()
-parser.add_argument("grad", help = "specify the gradient file")
-parser.add_argument("-o", "--output", help = "specify the output prefix")
-args = parser.parse_args()
+def get_header(grad_file):
+    header = ''
+    with open(grad_file, 'r') as f_input:
+        for line in f_input:
+            if line.startswith('#'):
+                header += line + '\n'
+    return header
 
 def integrate1D(x, grad):
     width = x[1] - x[0]
@@ -59,11 +63,24 @@ def plot_fes_1D(cv, pmf, xtitle, ytitle, label, color, outputname):
     plt.tight_layout()
     plt.savefig(outputname, dpi=600, transparent=False)
 
-x, grad_x = np.genfromtxt(args.grad, unpack = True)
-cv, pmf = integrate1D(x, grad_x)
-pmf = pmf - np.min(pmf)
-outputprefix = args.output
-outputpmf = outputprefix + '.pmf'
-outputpng = outputprefix + '.png'
-np.savetxt(outputpmf, np.c_[cv, pmf], fmt = '%10.2f %12.7f')
-plot_fes_1D(cv, pmf, r'$i$', '$\Delta G$ (kcal/mol)', None, 'red', outputpng)
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("grad", help = "specify the gradient file")
+    parser.add_argument("-o", "--output", help = "specify the output prefix")
+    args = parser.parse_args()
+    header = get_header(args.grad)
+    x, grad_x = np.genfromtxt(args.grad, unpack = True)
+    cv, pmf = integrate1D(x, grad_x)
+    pmf = pmf - np.min(pmf)
+    outputprefix = args.output
+    outputpmf = outputprefix + '.pmf'
+    outputpng = outputprefix + '.png'
+    with open(outputpmf, 'w') as f_output:
+        f_output.write(header)
+        np.savetxt(f_output, np.c_[cv, pmf], fmt = '%10.2f %12.7f')
+    plot_fes_1D(cv, pmf, r'$\xi$', '$\Delta G$ (kcal/mol)', None, 'red', outputpng)
+
+
+if __name__ == '__main__':
+    main()
