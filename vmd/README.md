@@ -16,3 +16,7 @@ Remove water molecules around proteins.
 ## change\_waterbox.tcl
 
 Change the water box for separation in the ACE-RBD binding complex.
+
+## get\_cell.tcl
+
+Get the vector and center of box. (see [reply from Chris Harrison](https://www.ks.uiuc.edu/Research/namd/mailing_list/namd-l.2011-2012/3885.html))
