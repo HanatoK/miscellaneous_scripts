@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.stats import binned_statistic_2d
+from scipy.linalg import eigh
 
 
 def time_correlation_matrix(data, weights=None, tau=10):
@@ -39,16 +40,38 @@ def correlation_fftn(X):
     return np.transpose(np.array(L), axes=(2, 0, 1))
 
 
-if __name__ == '__main__':
-    with np.load('hmm-doublewell-2d-100k.npz') as fh:
-        data = pd.DataFrame({'x': fh['trajectory'][:, 0],
-                             'y': fh['trajectory'][:, 1]})
-    cov_mat = time_correlation_matrix(data.to_numpy(), tau=10)
-    print(cov_mat)
-    eigvals, eigvecs = np.linalg.eigh(cov_mat)
-    print(eigvecs)
-    print(eigvals)
-    plt.hist2d(data['x'], data['y'], bins=(50, 50), cmap=plt.cm.jet)
-    max_eigvec = eigvecs[:, -1] * 3.0
-    plt.plot([0, max_eigvec[0]], [0, max_eigvec[1]], linewidth=3)
+def tica(data, time_lag):
+    cov_mat_t = time_correlation_matrix(data, tau=time_lag)
+    cov_mat_0 = time_correlation_matrix(data, tau=0)
+    return eigh(a=cov_mat_t, b=cov_mat_0)
+
+
+def implied_time_scale(time_lag, eigenvalue):
+    return -1.0 * time_lag / np.log(np.abs(eigenvalue))
+
+
+def main():
+    data = np.load('hmm-doublewell-2d-100k.npz')
+    traj = data['trajectory']
+    vals = np.ones(len(traj))
+    # histogram data
+    stats, x_edge, y_edge, binnumber = binned_statistic_2d(
+        x=traj[:, 0], y=traj[:, 1], values=vals, statistic='sum',
+        bins=(100, 50))
+    # Histogram does not follow the Cartesian convention
+    stats = np.transpose(stats)
+    plt.imshow(stats, extent=[x_edge[0], x_edge[-1], y_edge[0], y_edge[-1]])
+    # tica
+    time_lags = np.arange(1, 31)
+    for time_lag in time_lags:
+        eigvals, eigvecs = tica(traj, time_lag)
+        its = implied_time_scale(time_lag=time_lag, eigenvalue=eigvals[-1])
+        print(f'Time lag = {time_lag}; its = {its}')
+        max_eigvec = eigvecs[:, -1] * 1.5
+        plt.plot([0, max_eigvec[0]], [-1.0, max_eigvec[1]], linewidth=3)
     plt.show()
+
+
+if __name__ == '__main__':
+    main()
+
