@@ -23,8 +23,8 @@ def main():
     f = np.vectorize(label_to_char)
     labels_str = ''.join(list(f(labels_num)))
     # find all MFP subtrajs using regex
-    transition_A_to_B = [m.span() for m in re.finditer('A[A|M]*B', labels_str)]
-    transition_B_to_A = [m.span() for m in re.finditer('B[B|M]*A', labels_str)]
+    transition_A_to_B = [m.span() for m in re.finditer('A[AM]*B', labels_str)]
+    transition_B_to_A = [m.span() for m in re.finditer('B[BM]*A', labels_str)]
     with open('transition_A_to_B.csv', 'w', newline='') as f_output:
         time_avg = 0
         fieldnames = ['step_A', 'step_B', 'label_A', 'label_B']
