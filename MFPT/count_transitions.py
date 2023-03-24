@@ -68,7 +68,7 @@ def main():
         for i, j in transition_B_to_A:
             time_avg += data[j-1][0] - data[i][0]
             writer.writerow([data[i][0], data[j-1][0], data[i][1], data[j-1][1]])
-        time_avg *= 0.5 / 1e3 / len(transition_A_to_B)
+        time_avg *= 0.5 / 1e3 / len(transition_B_to_A)
         print(f'Mean first passage time from B to A is {time_avg} ps, rate k_ba is {1.0/time_avg:.3e} ps^-1')
 
 
