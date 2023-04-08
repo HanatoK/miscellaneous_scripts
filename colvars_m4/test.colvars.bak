@@ -1,0 +1,16 @@
+harmonics {
+    name          restraint_dist_1
+    dist_1       dist_1
+    centers       0.5
+    forceConstant 10.0
+    outputEnergy  on
+}
+
+harmonics {
+    name          restraint_dist_1
+    dist_1       dist_1
+    centers       0.3
+    forceConstant 20.0
+    outputEnergy  on
+}
+
