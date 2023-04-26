@@ -34,3 +34,20 @@ proc SelectionFromIndexFile {filename} {
     [set $item] global
   }
 }
+
+proc WriteVMDSelectionToGromacsIndexFile {atom_selection filename label_name} {
+  set atom_serials [$atom_selection get serial]
+  set foutput [open $filename "w"]
+  puts $foutput "\[ $label_name \]"
+  set num_fields_per_line 20
+  set current_field 1
+  foreach serial $atom_serials {
+    if {[expr $current_field % $num_fields_per_line] == 0} {
+      puts -nonewline $foutput "\n"
+      set current_field 1
+    }
+    puts -nonewline $foutput "$serial "
+    incr current_field
+  }
+  close $foutput
+}
