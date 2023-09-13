@@ -45,6 +45,34 @@ def reparametrize(positions, num_images=None, resolution=1000):
     return result, derivative, derivative2
 
 
+def remove_loops(positions):
+    import numpy as np
+
+    def image_distance(pos_x, pos_y):
+        diff = np.asarray(pos_x) - np.asarray(pos_y)
+        return np.sqrt(np.sum(diff * diff))
+    results = positions.tolist()
+    has_loop = False
+    while True:
+        has_loop = False
+        for i in range(1, len(results) - 1):
+            neighbor_dist = image_distance(results[i-1], results[i])
+            j = i + 1
+            while j < len(results):
+                dist = image_distance(results[i-1], results[j])
+                if dist < neighbor_dist:
+                    has_loop = True
+                    break
+                j = j + 1
+            if has_loop:
+                print(f'Remove indexes from {i} to {j}')
+                del results[i:j]
+                break
+        if not has_loop:
+            break
+    return torch.as_tensor(results, device=positions.device, dtype=positions.dtype)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('path', help='path position file')
