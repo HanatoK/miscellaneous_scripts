@@ -16,7 +16,18 @@ def reparametrize(positions, num_images=None, resolution=1000):
     if num_images is None:
         num_images = len(positions)
     for i in range(num_variables):
-        fX, df, df2 = cubic_spline_natural(X, positions[:, i])
+        X.requires_grad_(True)
+        fX, _, _ = cubic_spline_natural(X, positions[:, i])
+        def df(new_X):
+            new_X.requires_grad_(True)
+            output_Y = fX(new_X)
+            loss = torch.sum(output_Y)
+            return torch.autograd.grad(loss, new_X, create_graph=True)[0]
+        def df2(new_X):
+            new_X.requires_grad_(True)
+            output_Y = df(new_X)
+            loss = torch.sum(output_Y)
+            return torch.autograd.grad(loss, new_X, create_graph=True)[0]
         fX_list.append(fX)
         df_list.append(df)
         df2_list.append(df2)
