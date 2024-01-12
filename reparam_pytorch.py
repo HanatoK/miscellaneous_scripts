@@ -5,6 +5,25 @@ import argparse
 import pandas as pd
 
 
+def estimate_curve_length(positions, resolution=1000):
+    # do interpolation
+    X = torch.linspace(0, resolution, len(positions), device=positions.device)
+    # iterate over columns
+    fX_list = []
+    num_variables = positions.shape[1]
+    num_images = len(positions)
+    for i in range(num_variables):
+        fX, _, _ = cubic_spline_natural(X, positions[:, i])
+        fX_list.append(fX)
+    new_X = torch.linspace(0, resolution, num_images * resolution, device=positions.device)
+    new_Y = torch.stack([f(new_X) for f in fX_list]).T
+    # compute the total length
+    adjacent_diff = torch.diff(new_Y, dim=0)
+    all_lengths = torch.sqrt(torch.sum(adjacent_diff * adjacent_diff, dim=1))
+    total_length = torch.sum(all_lengths)
+    return total_length
+
+
 def reparametrize(positions, num_images=None, resolution=1000):
     # do interpolation
     X = torch.linspace(0, resolution, len(positions), device=positions.device)
