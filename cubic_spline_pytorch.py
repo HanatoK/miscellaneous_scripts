@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import torch
-import numpy as np
-from scipy.interpolate import CubicSpline
 
 
 def cubic_spline_natural(X, Y):
@@ -24,19 +22,10 @@ def cubic_spline_natural(X, Y):
     mat.to(device)
     vec = torch.as_tensor(vec_elems, device=device)
     tmp_C = torch.linalg.solve(mat, vec)
-    A = []
-    B = []
-    C = []
-    D = []
-    for i in range(0, N):
-        C.append(tmp_C[i])
-        D.append((tmp_C[i+1] - tmp_C[i]) / (3.0 * dX[i]))
-        B.append(dY[i] / dX[i] - dX[i] * (2.0 * tmp_C[i] + tmp_C[i+1]) / 3.0)
-        A.append(Y[i])
-    m_A = torch.as_tensor(A, device=device)
-    m_B = torch.as_tensor(B, device=device)
-    m_C = torch.as_tensor(C, device=device)
-    m_D = torch.as_tensor(D, device=device)
+    m_A = Y[0:N]
+    m_B = dY / dX - dX * (2.0 * tmp_C[0:N] + tmp_C[1:N+1]) / 3.0
+    m_C = tmp_C[0:N]
+    m_D = (tmp_C[1:N+1] - tmp_C[0:N]) / (3.0 * dX)
 
     def f(input_X):
         idx = torch.clamp(torch.searchsorted(X, input_X, right=True) - 1, min=0, max=N-1)
@@ -68,11 +57,14 @@ def cubic_spline_natural(X, Y):
 if __name__ == '__main__':
 
     def test_scipy():
+        import numpy as np
+        from scipy.interpolate import CubicSpline
         X = np.linspace(0, 5, 30)
         Y = np.cos(X)
         input_X = np.array([-0.1, 0.5, 1.5, 2.6, 3.7, 0.9, 5.2])
         fX = CubicSpline(X, Y, axis=0, bc_type='natural')
         output_Y = fX(input_X)
+        print("Running test_scipy():")
         print(output_Y)
 
     def test_torch():
@@ -87,6 +79,7 @@ if __name__ == '__main__':
         # loss.backward()
         grad_input_X = torch.autograd.grad(loss, input_X, create_graph=True)[0]
         grad2_input_X = torch.autograd.grad(torch.sum(grad_input_X), input_X)[0]
+        print("Running test_torch():")
         print(output_Y)
         print(grad_input_X)
         print(df(input_X))
@@ -99,15 +92,43 @@ if __name__ == '__main__':
         Y = torch.cos(X)
         fX, df, df2 = cubic_spline_natural(X, Y)
         input_X = deepcopy(X)
-        input_X.reqiures_grad = True
+        input_X.requires_grad = True
         output_Y = fX(input_X)
         loss = torch.sum(output_Y)
         loss.backward()
+        print("Running test_torch2():")
         print(output_Y)
         print(X.grad)
         print(input_X.grad)
         print(df(input_X))
 
+    def test_integral():
+        import numpy as np
+        p = torch.tensor(np.random.normal(0, 0.5, 30))
+        X = torch.linspace(0, 5, 30, requires_grad=True)
+        Y = torch.cos(X)
+        fX, df, df2 = cubic_spline_natural(X, Y)
+
+        def loss_func(X, inputs):
+            new_X = X + p
+            new_Y = torch.cos(new_X)
+            new_fX, new_df, new_df2 = cubic_spline_natural(new_X, new_Y)
+            return torch.sum((new_df(inputs) - df(inputs))**2)
+        inputs = torch.linspace(0, 5, 10, requires_grad=True)
+        L = loss_func(X, inputs)
+        print("Running test_integral():")
+        print(L)
+        L.backward()
+        print(X.grad)
+
+        # def numerical_gradients(epsilon=0.001):
+        #     results = torch.zeros_like(X, requires_grad=False)
+        #     for i in range(len(X)):
+        #         delta = torch.zeros_like(X, requires_grad=False)
+        #         delta[i] = epsilon
+        #         X_next = X
+
     test_scipy()
     test_torch()
     test_torch2()
+    test_integral()
