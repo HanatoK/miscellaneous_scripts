@@ -74,6 +74,7 @@ def main():
     positions = pd.read_csv(args.path, delimiter=r'\s+', comment='#', header=None).to_numpy()
     Y = positions.copy()
     for i in range(0, args.num_iterations):
+        Y = remove_loops(Y)
         Y, dY = reparametrize(positions=Y, num_images=args.num_images)
     # write the output
     with open(args.output, 'w') as fOutput:
